@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Broker Voucher</title>
+
+    <meta name="description" content="Broker Voucher Workflow System">
+
+    <!-- FONT -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" />
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- ================================================= -->
+        <!-- Header -->
+        <!-- ================================================= -->
+
+        <header class="header">
+
+            <div class="header-top">
+
+            <div class="logo">
+
+                <img
+                    src="odney-group-logo.png"
+                    alt="Odney Group"
+                    class="logo-image">
+
+            </div>
+
+                <nav class="stepper">
+
+                    <a href="#deal-information" class="active">
+                        <span>1</span>
+                        Deal
+                    </a>
+
+                    <a href="#lease">
+                        <span>2</span>
+                        Lease
+                    </a>
+
+                    <a href="#commission">
+                        <span>3</span>
+                        Commission
+                    </a>
+
+                    <a href="#summary">
+                        <span>4</span>
+                        Summary
+                    </a>
+
+                </nav>
+
+                <button id="btnGenerateInvoice">
+                    Generate Invoice
+                </button>
+
+            </div>
+
+            
+
+        </header>
+
+        <!-- ================================================= -->
+        <!-- Main Content -->
+        <!-- ================================================= -->
+
+        <main class="content">
+
+            <!-- ============================================== -->
+            <!-- Deal Information -->
+            <!-- ============================================== -->
+
+            <section class="page" id="deal-information">
+
+                <div class="section-header">
+                    <h1>Deal Information</h1>
+                    <p>General information about the commercial real estate transaction.</p>
+                </div>
+
+                <div class="card"> <!-- Deal Data -->
+
+                    <h2>Deal Data</h2>
+
+                    <div class="form-grid">
+
+                        <div class="form-group">
+
+                            <label for="dealType">Lease Deal</label>
+
+                            <input
+
+                                type="text"
+
+                                id="dealType"
+
+                                name="dealType"
+
+                                placeholder="e.g. New Lease">
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="transactionType">Type</label>
+
+                            <select id="transactionType" name="transactionType">
+
+                                <option value="">Select Type</option>
+
+                                <option>Tenant Representation</option>
+
+                                <option>Landlord Representation</option>
+
+                                <option>Dual Agency</option>
+
+                            </select>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="extension">Extension</label>
+
+                            <select id="extension" name="extension">
+
+                                <option value="">Select</option>
+
+                                <option>Yes</option>
+
+                                <option>No</option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="card"> <!-- Key Dates -->
+
+                    <h2>Key Dates</h2>
+
+                    <div class="form-grid">
+
+                        <div class="form-group">
+
+                            <label for="leaseExecutionDate">
+
+                                Lease Execution Date
+
+                            </label>
+
+                            <input
+
+                                type="date"
+
+                                id="leaseExecutionDate"
+
+                                name="leaseExecutionDate">
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="commencementDate">
+
+                                Commencement Date
+
+                            </label>
+
+                            <input
+
+                                type="date"
+
+                                id="commencementDate"
+
+                                name="commencementDate">
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="leaseExpiryDate">
+
+                                Lease Expiry Date
+
+                            </label>
+
+                            <input
+
+                                type="date"
+
+                                id="leaseExpiryDate"
+
+                                name="leaseExpiryDate">
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="card">
+
+                    <h2>Transaction Details</h2>
+
+                    <div class="transaction-grid">
+
+                        <!-- ========================================= -->
+                        <!-- Property -->
+                        <!-- ========================================= -->
+
+                        <div class="transaction-card">
+
+                            <h3>Property</h3>
+
+                            <div class="form-group">
+                                <label>Building</label>
+                                <input type="text" id="building">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Address</label>
+                                <input type="text" id="buildingAddress">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Square Feet</label>
+                                <input type="number" id="squareFeet">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Building Type</label>
+                                <input type="text" id="buildingType">
+                            </div>
+
+                        </div>
+
+                        <!-- ========================================= -->
+                        <!-- Landlord -->
+                        <!-- ========================================= -->
+
+                        <div class="transaction-card">
+
+                            <h3>Landlord</h3>
+
+                            <div class="form-group">
+                                <label>Landlord Name</label>
+                                <input type="text" id="landlordName">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Landlord Address</label>
+                                <input type="text" id="landlordAddress">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Contact Info</label>
+                                <input type="text" id="landlordContact">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Represented By</label>
+                                <input type="text" id="landlordRepresentedBy">
+                            </div>
+
+                        </div>
+
+                        <!-- ========================================= -->
+                        <!-- Tenant -->
+                        <!-- ========================================= -->
+
+                        <div class="transaction-card">
+
+                            <h3>Tenant</h3>
+
+                            <div class="form-group">
+                                <label>Tenant Name</label>
+                                <input type="text" id="tenantName">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Address</label>
+                                <input type="text" id="tenantAddress">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Represented By</label>
+                                <input type="text" id="tenantRepresentedBy">
+                            </div>
+
+                        </div>
+
+                        <!-- ========================================= -->
+                        <!-- Broker -->
+                        <!-- ========================================= -->
+
+                        <div class="transaction-card">
+
+                            <h3>Broker</h3>
+
+                            <div class="form-group">
+                                <label>Broker 1</label>
+                                <input type="text" id="broker1">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Broker 2</label>
+                                <input type="text" id="broker2">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Representing</label>
+                                <select id="brokerRepresenting">
+                                    <option value="">Select</option>
+                                    <option>Landlord</option>
+                                    <option>Tenant</option>
+                                    <option>Both</option>
+                                </select>
+                            </div>
+
+                        </div>
+
+                        <!-- ========================================= -->
+                        <!-- Co Broker A -->
+                        <!-- ========================================= -->
+
+                        <div class="transaction-card">
+
+                            <h3>Co-Broker A</h3>
+
+                            <div class="form-group">
+                                <label>Company / Name</label>
+                                <input type="text" id="coBrokerAName">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Address</label>
+                                <input type="text" id="coBrokerAAddress">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Representing</label>
+                                <select id="coBrokerARepresenting">
+                                    <option value="">Select</option>
+                                    <option>Landlord</option>
+                                    <option>Tenant</option>
+                                </select>
+                            </div>
+
+                        </div>
+
+                        <!-- ========================================= -->
+                        <!-- Co Broker B -->
+                        <!-- ========================================= -->
+
+                        <div class="transaction-card">
+
+                            <h3>Co-Broker B</h3>
+
+                            <div class="form-group">
+                                <label>Company / Name</label>
+                                <input type="text" id="coBrokerBName">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Address</label>
+                                <input type="text" id="coBrokerBAddress">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Representing</label>
+                                <select id="coBrokerBRepresenting">
+                                    <option value="">Select</option>
+                                    <option>Landlord</option>
+                                    <option>Tenant</option>
+                                </select>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="wizard-footer">
+
+                    <button class="btn-secondary" id="btnPrevious" disabled>
+                        Previous
+                    </button>
+
+                    <button class="btn-primary" id="btnNext">
+                        Next
+                    </button>
+
+                </div>
+
+            </section>
+
+
+            <!-- ============================================== -->
+            <!-- Lease -->
+            <!-- ============================================== -->
+
+            <section class="page" id="lease">
+
+                <div class="section-header">
+
+                    <h1>Lease Schedule</h1>
+
+                    <p>
+                        Add one or more lease periods for this transaction.
+                    </p>
+
+                </div>
+
+                <!-- Lease Container -->
+                <div id="leaseContainer">
+
+                    <!-- ========================================= -->
+                    <!-- Lease Period Card -->
+                    <!-- ========================================= -->
+
+                    <div class="card lease-card">
+
+                        <div class="card-header">
+
+                            <h2>Lease Period 1</h2>
+
+                            <button
+                                type="button"
+                                class="btn-danger btnDeleteLease">
+
+                                Delete
+
+                            </button>
+
+                        </div>
+
+                        <div class="form-grid">
+
+                            <!-- Start Date -->
+                            <div class="form-group">
+
+                                <label>Start Date</label>
+
+                                <input
+                                    type="date"
+                                    class="leaseStartDate">
+
+                            </div>
+
+                            <!-- End Date -->
+                            <div class="form-group">
+
+                                <label>End Date</label>
+
+                                <input
+                                    type="date"
+                                    class="leaseEndDate">
+
+                            </div>
+
+                            <!-- Months -->
+                            <div class="form-group">
+
+                                <label>Months</label>
+
+                                <input
+                                    type="number"
+                                    class="leaseMonths"
+                                    readonly>
+
+                            </div>
+
+                            <!-- Monthly Rent -->
+                            <div class="form-group">
+
+                                <label>Monthly Rent</label>
+
+                                <input
+                                    type="number"
+                                    class="leaseMonthlyRent"
+                                    placeholder="0.00">
+
+                            </div>
+
+                            <!-- Escalation -->
+                            <div class="form-group">
+
+                                <label>Escalation (%)</label>
+
+                                <input
+                                    type="number"
+                                    class="leaseEscalation"
+                                    placeholder="0">
+
+                            </div>
+
+                            <!-- Additional Cost -->
+                            <div class="form-group">
+
+                                <label>Additional Cost</label>
+
+                                <input
+                                    type="number"
+                                    class="leaseAdditionalCost"
+                                    placeholder="0.00">
+
+                            </div>
+
+                        </div>
+
+                        <div class="summary-grid-2">
+
+                            <div class="summary-item">
+
+                                <label>Period Net Rent</label>
+
+                                <input
+                                    type="text"
+                                    class="leaseNetRent"
+                                    readonly>
+
+                            </div>
+
+                            <div class="summary-item">
+
+                                <label>Period Gross Rent</label>
+
+                                <input
+                                    type="text"
+                                    class="leaseGrossRent"
+                                    readonly>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- Add Lease -->
+                <div class="lease-actions">
+
+                    <button
+                        id="btnAddLease"
+                        class="btn-primary">
+
+                        + Add Lease Period
+
+                    </button>
+
+                </div>
+
+                <!-- Wizard -->
+                <div class="wizard-footer">
+
+                    <button class="btn-secondary btn-prev">
+
+                        Previous
+
+                    </button>
+
+                    <button class="btn-primary btn-next">
+
+                        Next
+
+                    </button>
+
+                </div>
+
+            </section>
+
+
+            <!-- ============================================== -->
+            <!-- Commission -->
+            <!-- ============================================== -->
+
+            <section class="page" id="commission">
+
+                <div class="section-header">
+
+                    <h1>Commission</h1>
+
+                    <p>
+                        Select a commission method and review the calculated commission schedule.
+                    </p>
+
+                </div>
+
+                <!-- ===================================== -->
+                <!-- Commission Method -->
+                <!-- ===================================== -->
+
+                <div class="card">
+
+                    <h2>Commission Method</h2>
+
+                    <div class="commission-method">
+
+                        <label class="radio-card">
+
+                            <input
+                                type="radio"
+                                name="commissionMethod"
+                                value="percentage"
+                                checked>
+
+                            <span>Percentage</span>
+
+                        </label>
+
+                        <label class="radio-card">
+
+                            <input
+                                type="radio"
+                                name="commissionMethod"
+                                value="perSF">
+
+                            <span>Per Square Foot</span>
+
+                        </label>
+
+                        <label class="radio-card">
+
+                            <input
+                                type="radio"
+                                name="commissionMethod"
+                                value="flatFee">
+
+                            <span>Flat Fee</span>
+
+                        </label>
+
+                    </div>
+
+                </div>
+
+                <!-- ===================================== -->
+                <!-- Commission Schedule -->
+                <!-- ===================================== -->
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <h2>Commission Schedule</h2>
+
+                    </div>
+
+                    <div id="commissionContainer">
+
+                        <!-- Generated automatically from Lease -->
+
+                    </div>
+
+                </div>
+
+                <!-- ===================================== -->
+                <!-- Percentage -->
+                <!-- ===================================== -->
+
+                <div
+                    class="card commission-panel"
+                    id="percentagePanel">
+
+                    <h2>Percentage Settings</h2>
+
+                    <p>
+                        Enter the commission percentage for each lease period.
+                    </p>
+
+                </div>
+
+                <!-- ===================================== -->
+                <!-- Per SF -->
+                <!-- ===================================== -->
+
+                <div
+                    class="card commission-panel hidden"
+                    id="perSFPanel">
+
+                    <h2>Per Square Foot Settings</h2>
+
+                    <p>
+                        Enter the commission amount per square foot.
+                    </p>
+
+                </div>
+
+                <!-- ===================================== -->
+                <!-- Flat Fee -->
+                <!-- ===================================== -->
+
+                <div
+                    class="card commission-panel hidden"
+                    id="flatFeePanel">
+
+                    <h2>Flat Fee Settings</h2>
+
+                    <p>
+                        Enter the flat commission amount.
+                    </p>
+
+                </div>
+
+                <!-- ===================================== -->
+                <!-- Total -->
+                <!-- ===================================== -->
+
+                <div class="card">
+
+                    <div class="summary-grid-3">
+
+                        <div class="summary-item">
+
+                            <label>Total Commission</label>
+
+                            <input
+                                type="text"
+                                id="totalCommission"
+                                readonly>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="wizard-footer">
+
+                    <button class="btn-secondary btn-prev">
+
+                        Previous
+
+                    </button>
+
+                    <button class="btn-primary btn-next">
+
+                        Next
+
+                    </button>
+
+                </div>
+
+            </section>
+
+
+            <!-- ============================================== -->
+            <!-- Summary -->
+            <!-- ============================================== -->
+
+            <section class="page" id="summary">
+
+                <div class="section-header">
+
+                    <h1>Financial Summary</h1>
+
+                    <p>
+                        Review calculated values before generating the invoice.
+                    </p>
+
+                </div>
+
+                <div class="card">
+
+                    <div class="summary-grid">
+
+                        <!-- Summary Cards -->
+
+                    </div>
+
+                </div>
+
+                <div class="wizard-footer">
+
+                    <button class="btn-secondary" id="btnPrevious" disabled>
+                        Previous
+                    </button>
+
+                    <button class="btn-primary" id="btnNext">
+                        Next
+                    </button>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
