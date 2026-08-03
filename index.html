@@ -240,7 +240,7 @@
 
                             <div class="form-group">
                                 <label>Square Feet</label>
-                                <input type="number" id="squareFeet">
+                                <input type="text" id="squareFeet" inputmode="numeric">
                             </div>
 
                             <div class="form-group">
@@ -768,41 +768,131 @@
             <!-- Summary -->
             <!-- ============================================== -->
 
-            <section class="page" id="summary">
+<!-- Commission -->
+<section class="page" id="summary">
+    <div class="card">
 
-                <div class="section-header">
+    <h2>Financial Summary</h2>
 
-                    <h1>Financial Summary</h1>
+    <div class="summary-grid-2">
 
-                    <p>
-                        Review calculated values before generating the invoice.
-                    </p>
+        <div class="summary-item">
 
-                </div>
+            <label>Invoice</label>
 
-                <div class="card">
+            <input id="summaryInvoice" readonly>
 
-                    <div class="summary-grid">
+        </div>
 
-                        <!-- Summary Cards -->
+        <div class="summary-item">
 
-                    </div>
+            <label>Invoice Fee</label>
 
-                </div>
+            <input id="summaryInvoiceFee" readonly>
 
-                <div class="wizard-footer">
+        </div>
 
-                    <button class="btn-secondary" id="btnPrevious" disabled>
-                        Previous
-                    </button>
+        <div class="summary-item">
 
-                    <button class="btn-primary" id="btnNext">
-                        Next
-                    </button>
+            <label>Client Fee</label>
 
-                </div>
+            <input id="summaryClientFee" readonly>
 
-            </section>
+        </div>
+
+        <div class="summary-item">
+
+            <label>Commission Method</label>
+
+            <input id="summaryMethod" readonly>
+
+        </div>
+
+    </div>
+
+    <div class="summary-grid-2">
+
+        <div class="summary-item">
+
+            <label id="coBrokerALabel">
+
+                Co-Broker A
+
+            </label>
+
+            <input
+                id="summaryCoBrokerA"
+                type="text"
+                placeholder="$0.00">
+
+        </div>
+
+        <div class="summary-item">
+
+            <label id="coBrokerBLabel">
+
+                Co-Broker B
+
+            </label>
+
+            <input
+                id="summaryCoBrokerB"
+                type="text"
+                placeholder="$0.00">
+
+        </div>
+
+    </div>
+
+    <div class="summary-grid-2">
+
+        <div class="summary-item">
+
+            <label>
+
+                Base for Distribution
+
+            </label>
+
+            <input
+                id="summaryBaseDistribution"
+                readonly>
+
+        </div>
+
+        <div class="summary-item">
+
+            <label id="broker1Label">
+
+                Broker 1
+
+            </label>
+
+            <input
+                id="summaryBroker1"
+                readonly>
+
+        </div>
+
+        <div class="summary-item">
+
+            <label id="broker2Label">
+
+                Broker 2
+
+            </label>
+
+            <input
+                id="summaryBroker2"
+                readonly>
+
+        </div>
+
+    </div>
+
+</div>
+</section>
+
 
         </main>
 

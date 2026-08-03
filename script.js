@@ -9,12 +9,53 @@ const btnAddLease = document.getElementById("btnAddLease");
 
 document.addEventListener("DOMContentLoaded", () => {
 
+    document.getElementById("summaryCoBrokerA")
+    .addEventListener("input", calculateDistribution);
+
+    document.getElementById("summaryCoBrokerB")
+    .addEventListener("input", calculateDistribution);
+
     BrokerVoucher.init();
     initializeLease();
     initializeCommission();
+
+    const squareFeet =
+    document.getElementById("squareFeet");
+
+        squareFeet.onfocus = ()=>{
+
+            squareFeet.value =
+                parseNumber(squareFeet.value) || "";
+
+        };
+
+        squareFeet.onblur = ()=>{
+
+            if(squareFeet.value==="") return;
+
+            squareFeet.value =
+                formatNumber(squareFeet.value);
+
+        };
 });
 
 function initializeCommission(){
+
+    document
+    .getElementById("squareFeet")
+    .addEventListener("input", ()=>{
+
+        const method = document.querySelector(
+            'input[name="commissionMethod"]:checked'
+        ).value;
+
+        if(method==="perSF"){
+
+            syncCommissionSchedule();
+
+        }
+
+    });
 
     initializeCommissionMethod();
 
@@ -60,34 +101,6 @@ function showCommissionPanel(){
                 .getElementById("percentagePanel")
                 .classList.remove("hidden");
 
-            document
-                .querySelectorAll(".commissionRateLabel")
-                .forEach(label=>{
-                    label.textContent = "Commission Rate (%)";
-                });
-
-            document
-                .querySelectorAll(".commissionRate")
-                .forEach(input=>{
-
-                    switch(method){
-
-                        case "percentage":
-                            input.placeholder = "%";
-                            break;
-
-                        case "perSF":
-                            input.placeholder = "$ / SF";
-                            break;
-
-                        case "flatFee":
-                            input.placeholder = "$";
-                            break;
-
-                    }
-
-                });
-
             break;
 
         case "perSF":
@@ -95,12 +108,6 @@ function showCommissionPanel(){
             document
                 .getElementById("perSFPanel")
                 .classList.remove("hidden");
-
-            document
-                .querySelectorAll(".commissionRateLabel")
-                .forEach(label=>{
-                    label.textContent = "Rate per SF";
-                });
 
             break;
 
@@ -110,68 +117,87 @@ function showCommissionPanel(){
                 .getElementById("flatFeePanel")
                 .classList.remove("hidden");
 
-            document
-                .querySelectorAll(".commissionRateLabel")
-                .forEach(label=>{
-                    label.textContent = "Flat Fee Amount";
-                });
-
             break;
 
     }
 
-    document
-        .querySelectorAll(".commissionRate")
-        .forEach(input=>{
 
-            switch(method){
 
-                case "percentage":
-                    input.placeholder="%";
-                    break;
-
-                case "perSF":
-                    input.placeholder="$ / SF";
-                    break;
-
-                case "flatFee":
-                    input.placeholder="$";
-                    break;
-
-            }
-
-        });
-
-    calculateCommission();
+    syncCommissionSchedule();
 
 }
 
 function syncCommissionSchedule(){
 
-    const leaseCards =
-        document.querySelectorAll(".lease-card");
-
     const container =
         document.getElementById("commissionContainer");
 
-    container.innerHTML="";
+    container.innerHTML = "";
 
-    leaseCards.forEach((lease,index)=>{
+    const method = document.querySelector(
+        'input[name="commissionMethod"]:checked'
+    ).value;
+
+    if(method === "percentage"){
+
+        document.querySelectorAll(".lease-card")
+            .forEach((lease,index)=>{
+
+                container.appendChild(
+                    createPercentageRow(lease,index+1)
+                );
+
+            });
+
+    }
+
+    else if(method === "perSF"){
+
+        const years = getLeaseYears();
+
+        for(let i=1;i<=years;i++){
+
+            container.appendChild(
+                createPerSFRow(i)
+            );
+
+        }
+
+    }
+
+    else if(method === "flatFee"){
 
         container.appendChild(
-
-            createCommissionRow(lease,index+1)
-
+            createFlatFeeRow()
         );
 
-    });
+    }
 
     attachCommissionEvents();
     calculateCommission();
 
 }
 
-function createCommissionRow(lease,index){
+function getLeaseYears(){
+
+    let totalMonths = 0;
+
+    document
+        .querySelectorAll(".leaseMonths")
+        .forEach(input=>{
+
+            totalMonths += parseInt(input.value) || 0;
+
+        });
+
+    return Math.max(
+        1,
+        Math.ceil(totalMonths / 12)
+    );
+
+}
+
+function createPercentageRow(lease,index){
 
     const row=document.createElement("div");
 
@@ -264,6 +290,105 @@ function createCommissionRow(lease,index){
 
 }
 
+function createPerSFRow(year){
+
+    const row=document.createElement("div");
+
+    row.className="commission-row";
+
+    const sf =
+    parseNumber(
+        document.getElementById("squareFeet").value
+    );
+
+    row.innerHTML=`
+
+        <div class="commission-title">
+
+            Year ${year}
+
+        </div>
+
+        <div class="commission-grid">
+
+            <div class="form-group">
+
+                <label>Square Feet</label>
+
+                <input
+                    class="commissionSF"
+                    value="${formatNumber(sf)}"
+                    readonly>
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Rate / SF</label>
+
+                <input
+                    class="commissionRate"
+                    type="number">
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Commission Amount</label>
+
+                <input
+                    class="commissionAmount"
+                    readonly>
+
+            </div>
+
+        </div>
+
+    `;
+
+    return row;
+
+}
+
+function createFlatFeeRow(){
+
+    const row = document.createElement("div");
+
+    row.className = "commission-row";
+
+    row.innerHTML = `
+
+        <div class="commission-grid">
+
+            <div class="form-group">
+
+                <label>Flat Fee</label>
+
+                <input
+                    class="commissionRate"
+                    type="number">
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Commission Amount</label>
+
+                <input
+                    class="commissionAmount"
+                    readonly>
+
+            </div>
+
+        </div>
+
+    `;
+
+    return row;
+
+}
+
+
 function attachCommissionEvents(){
 
     document
@@ -281,54 +406,68 @@ function calculateCommission(){
     let totalCommission = 0;
 
     const method = document.querySelector(
-    'input[name="commissionMethod"]:checked'
-        )?.value;
+        'input[name="commissionMethod"]:checked'
+    )?.value;
 
-        if(!method) return;
+    if(!method) return;
 
     document
         .querySelectorAll(".commission-row")
         .forEach(row=>{
 
-            const squareFeet =
-            parseFloat(
-                document.getElementById("squareFeet").value
-            ) || 0;
-
-            const commissionable =
-            parseCurrency(
-                row.querySelector(".commissionable").value
-            );
+            let commission = 0;
 
             const rate =
                 parseFloat(
-                    row.querySelector(".commissionRate")
-                    .value
+                    row.querySelector(".commissionRate").value
                 ) || 0;
-
-            let commission = 0;
 
             switch(method){
 
-                case "percentage":
+                // =====================================
+                // Percentage
+                // =====================================
+
+                case "percentage":{
+
+                    const commissionable =
+                        parseCurrency(
+                            row.querySelector(".commissionable").value
+                        );
 
                     commission =
                         commissionable * rate / 100;
 
                     break;
+                }
 
-                case "perSF":
+                // =====================================
+                // Per Square Foot
+                // =====================================
+
+                case "perSF":{
+
+                    const sf =
+                    parseNumber(
+                        row.querySelector(".commissionSF").value
+                    );
 
                     commission =
-                        squareFeet * rate;
+                        sf * rate;
 
                     break;
+                }
 
-                case "flatFee":
+                // =====================================
+                // Flat Fee
+                // =====================================
+
+                case "flatFee":{
 
                     commission = rate;
 
                     break;
+                }
 
             }
 
@@ -345,7 +484,7 @@ function calculateCommission(){
     if(total){
 
         total.value =
-    formatCurrency(totalCommission);
+            formatCurrency(totalCommission);
 
     }
 
@@ -402,6 +541,24 @@ function currencyBlur(input){
     input.value = formatCurrency(
         parseFloat(input.value)
     );
+
+}
+
+// ======================================
+// NUMBER FORMAT
+// ======================================
+
+function formatNumber(value){
+
+    return Number(value).toLocaleString("en-US");
+
+}
+
+function parseNumber(value){
+
+    return parseFloat(
+        value.replace(/,/g,"")
+    ) || 0;
 
 }
 
@@ -486,6 +643,14 @@ const BrokerVoucher = {
 
         this.steps[index].classList.add("active");
 
+            // Update Summary ketika membuka Step 4
+
+        if(index === 3){
+
+            updateSummary();
+
+        }
+
     },
 
     next() {
@@ -503,6 +668,8 @@ const BrokerVoucher = {
         this.showStep(this.currentStep - 1);
 
     }
+
+    
 
 };
 
@@ -670,4 +837,144 @@ function calculateLease(card){
     }
 
 }
+
+function calculateDistribution(){
+
+    const total =
+        parseCurrency(
+            document.getElementById("summaryInvoice").value
+        );
+
+    const coA =
+        parseCurrency(
+            document.getElementById("summaryCoBrokerA").value
+        );
+
+    const coB =
+        parseCurrency(
+            document.getElementById("summaryCoBrokerB").value
+        );
+
+    const base =
+        total - coA - coB;
+
+    document.getElementById("summaryBaseDistribution").value =
+        formatCurrency(base);
+
+    // sementara seluruh base untuk Broker 1
+
+    document.getElementById("summaryBroker1").value =
+        formatCurrency(base);
+
+    document.getElementById("summaryBroker2").value =
+        formatCurrency(0);
+
+}
+
+function updateSummary(){
+
+    // ======================================
+    // Deal
+    // ======================================
+
+    document.getElementById("summaryBuilding").value =
+        document.getElementById("building").value;
+
+    document.getElementById("summaryAddress").value =
+        document.getElementById("buildingAddress").value;
+
+    document.getElementById("summaryTenant").value =
+        document.getElementById("tenantName").value;
+
+    document.getElementById("summaryLandlord").value =
+        document.getElementById("landlordName").value;
+
+    document.getElementById("summarySF").value =
+        formatNumber(
+            parseNumber(
+                document.getElementById("squareFeet").value
+            )
+        );
+
+    document.getElementById("summaryDuration").value =
+        getLeaseYears() + " Year(s)";
+
+    // ======================================
+    // Lease
+    // ======================================
+
+    let totalNet = 0;
+    let totalGross = 0;
+
+    document.querySelectorAll(".leaseNetRent")
+        .forEach(input=>{
+
+            totalNet += parseCurrency(input.value);
+
+        });
+
+    document.querySelectorAll(".leaseGrossRent")
+        .forEach(input=>{
+
+            totalGross += parseCurrency(input.value);
+
+        });
+
+    document.getElementById("summaryNetRent").value =
+        formatCurrency(totalNet);
+
+    document.getElementById("summaryGrossRent").value =
+        formatCurrency(totalGross);
+
+    // ======================================
+    // Commission
+    // ======================================
+
+    const totalCommission =
+        parseCurrency(
+            document.getElementById("totalCommission").value
+        );
+
+    const method =
+        document.querySelector(
+            'input[name="commissionMethod"]:checked'
+        ).nextElementSibling.innerText;
+
+    document.getElementById("summaryMethod").value =
+        method;
+
+    document.getElementById("summaryInvoice").value =
+        formatCurrency(totalCommission);
+
+    document.getElementById("summaryInvoiceFee").value =
+        formatCurrency(totalCommission);
+
+    document.getElementById("summaryClientFee").value =
+        formatCurrency(totalCommission);
+
+    // ======================================
+    // Dynamic Labels
+    // ======================================
+
+    document.getElementById("coBrokerALabel").textContent =
+        document.getElementById("coBrokerAName").value || "Co-Broker A";
+
+    document.getElementById("coBrokerBLabel").textContent =
+        document.getElementById("coBrokerBName").value || "Co-Broker B";
+
+    document.getElementById("broker1Label").textContent =
+        document.getElementById("broker1").value || "Broker 1";
+
+    document.getElementById("broker2Label").textContent =
+        document.getElementById("broker2").value || "Broker 2";
+
+    // ======================================
+    // Distribution
+    // ======================================
+
+    calculateDistribution();
+
+}
+
+
 
