@@ -6,6 +6,7 @@
 const leaseContainer = document.getElementById("leaseContainer");
 const btnAddLease = document.getElementById("btnAddLease");
 
+
 document.addEventListener("DOMContentLoaded", () => {
 
     BrokerVoucher.init();
@@ -56,28 +57,92 @@ function showCommissionPanel(){
         case "percentage":
 
             document
-            .getElementById("percentagePanel")
-            .classList.remove("hidden");
+                .getElementById("percentagePanel")
+                .classList.remove("hidden");
+
+            document
+                .querySelectorAll(".commissionRateLabel")
+                .forEach(label=>{
+                    label.textContent = "Commission Rate (%)";
+                });
+
+            document
+                .querySelectorAll(".commissionRate")
+                .forEach(input=>{
+
+                    switch(method){
+
+                        case "percentage":
+                            input.placeholder = "%";
+                            break;
+
+                        case "perSF":
+                            input.placeholder = "$ / SF";
+                            break;
+
+                        case "flatFee":
+                            input.placeholder = "$";
+                            break;
+
+                    }
+
+                });
 
             break;
 
         case "perSF":
 
             document
-            .getElementById("perSFPanel")
-            .classList.remove("hidden");
+                .getElementById("perSFPanel")
+                .classList.remove("hidden");
+
+            document
+                .querySelectorAll(".commissionRateLabel")
+                .forEach(label=>{
+                    label.textContent = "Rate per SF";
+                });
 
             break;
 
         case "flatFee":
 
             document
-            .getElementById("flatFeePanel")
-            .classList.remove("hidden");
+                .getElementById("flatFeePanel")
+                .classList.remove("hidden");
+
+            document
+                .querySelectorAll(".commissionRateLabel")
+                .forEach(label=>{
+                    label.textContent = "Flat Fee Amount";
+                });
 
             break;
 
     }
+
+    document
+        .querySelectorAll(".commissionRate")
+        .forEach(input=>{
+
+            switch(method){
+
+                case "percentage":
+                    input.placeholder="%";
+                    break;
+
+                case "perSF":
+                    input.placeholder="$ / SF";
+                    break;
+
+                case "flatFee":
+                    input.placeholder="$";
+                    break;
+
+            }
+
+        });
+
+    calculateCommission();
 
 }
 
@@ -100,6 +165,9 @@ function syncCommissionSchedule(){
         );
 
     });
+
+    attachCommissionEvents();
+    calculateCommission();
 
 }
 
@@ -154,30 +222,36 @@ function createCommissionRow(lease,index){
 
             <div class="form-group">
 
-                <label>Commissionable</label>
+                <label>Commissionable Amount</label>
 
                 <input
                     class="commissionable"
-                    type="number">
+                    type="text"
+                    value="${lease.querySelector(".leaseNetRent").value}"
+                    readonly>
 
             </div>
 
             <div class="form-group">
 
-                <label>Rate</label>
+                <label class="commissionRateLabel">
+                    Commission Rate (%)
+                </label>
 
                 <input
                     class="commissionRate"
-                    type="number">
+                    type="number"
+                    placeholder="0">
 
             </div>
 
             <div class="form-group">
 
-                <label>Commission</label>
+                <label>Commission Amount</label>
 
                 <input
                     class="commissionAmount"
+                    type="text"
                     readonly>
 
             </div>
@@ -189,6 +263,149 @@ function createCommissionRow(lease,index){
     return row;
 
 }
+
+function attachCommissionEvents(){
+
+    document
+        .querySelectorAll(".commissionRate")
+        .forEach(input=>{
+
+            input.oninput = calculateCommission;
+
+        });
+
+}
+
+function calculateCommission(){
+
+    let totalCommission = 0;
+
+    const method = document.querySelector(
+    'input[name="commissionMethod"]:checked'
+        )?.value;
+
+        if(!method) return;
+
+    document
+        .querySelectorAll(".commission-row")
+        .forEach(row=>{
+
+            const squareFeet =
+            parseFloat(
+                document.getElementById("squareFeet").value
+            ) || 0;
+
+            const commissionable =
+            parseCurrency(
+                row.querySelector(".commissionable").value
+            );
+
+            const rate =
+                parseFloat(
+                    row.querySelector(".commissionRate")
+                    .value
+                ) || 0;
+
+            let commission = 0;
+
+            switch(method){
+
+                case "percentage":
+
+                    commission =
+                        commissionable * rate / 100;
+
+                    break;
+
+                case "perSF":
+
+                    commission =
+                        squareFeet * rate;
+
+                    break;
+
+                case "flatFee":
+
+                    commission = rate;
+
+                    break;
+
+            }
+
+            row.querySelector(".commissionAmount").value =
+                formatCurrency(commission);
+
+            totalCommission += commission;
+
+        });
+
+    const total =
+        document.getElementById("totalCommission");
+
+    if(total){
+
+        total.value =
+    formatCurrency(totalCommission);
+
+    }
+
+}
+
+// ======================================
+// CURRENCY FORMAT
+// ======================================
+
+
+function parseCurrency(value){
+
+    return parseFloat(
+        value.replace(/[^\d.-]/g,"")
+    ) || 0;
+
+}
+
+function formatCurrency(value){
+
+    return value.toLocaleString("en-US",{
+        style:"currency",
+        currency:"USD",
+        minimumFractionDigits:2
+    });
+
+}
+
+function formatCurrencyInput(input){
+
+    let value = input.value.replace(/[^\d.]/g,"");
+
+    if(value === ""){
+
+        input.value = "";
+        return;
+
+    }
+
+    input.value = formatCurrency(parseFloat(value));
+
+}
+
+function currencyFocus(input){
+
+    input.value = parseCurrency(input.value) || "";
+
+}
+
+function currencyBlur(input){
+
+    if(input.value === "") return;
+
+    input.value = formatCurrency(
+        parseFloat(input.value)
+    );
+
+}
+
+
 // ======================================
 // Broker Voucher
 // ======================================
@@ -369,12 +586,40 @@ function attachLeaseEvents(){
         .onchange = ()=>calculateLease(card);
 
         // Monthly Rent
-        card.querySelector(".leaseMonthlyRent")
-        .oninput = ()=>calculateLease(card);
+        const monthly =
+        card.querySelector(".leaseMonthlyRent");
+
+        monthly.onfocus = ()=>{
+
+            currencyFocus(monthly);
+
+        };
+
+        monthly.onblur = ()=>{
+
+            currencyBlur(monthly);
+
+            calculateLease(card);
+
+        };
 
         // Additional Cost
-        card.querySelector(".leaseAdditionalCost")
-        .oninput = ()=>calculateLease(card);
+        const additional =
+        card.querySelector(".leaseAdditionalCost");
+
+        additional.onfocus = ()=>{
+
+            currencyFocus(additional);
+
+        };
+
+        additional.onblur = ()=>{
+
+            currencyBlur(additional);
+
+            calculateLease(card);
+
+        };
 
     });
 
@@ -389,14 +634,14 @@ function calculateLease(card){
         card.querySelector(".leaseEndDate").value;
 
     const monthly =
-        parseFloat(
-            card.querySelector(".leaseMonthlyRent").value
-        ) || 0;
+    parseCurrency(
+        card.querySelector(".leaseMonthlyRent").value
+    );
 
     const additional =
-        parseFloat(
-            card.querySelector(".leaseAdditionalCost").value
-        ) || 0;
+    parseCurrency(
+        card.querySelector(".leaseAdditionalCost").value
+    );
 
     if(start && end){
 
@@ -415,10 +660,10 @@ function calculateLease(card){
         const gross = months * (monthly + additional);
 
         card.querySelector(".leaseNetRent").value =
-            net.toLocaleString();
+        formatCurrency(net);
 
         card.querySelector(".leaseGrossRent").value =
-            gross.toLocaleString();
+        formatCurrency(gross);
 
             syncCommissionSchedule();
 
