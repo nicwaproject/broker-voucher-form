@@ -3,978 +3,1140 @@
 // script.js
 // ======================================
 
-const leaseContainer = document.getElementById("leaseContainer");
-const btnAddLease = document.getElementById("btnAddLease");
-
-
-document.addEventListener("DOMContentLoaded", () => {
-
-    document.getElementById("summaryCoBrokerA")
-    .addEventListener("input", calculateDistribution);
-
-    document.getElementById("summaryCoBrokerB")
-    .addEventListener("input", calculateDistribution);
-
-    BrokerVoucher.init();
-    initializeLease();
-    initializeCommission();
-
-    const squareFeet =
-    document.getElementById("squareFeet");
-
-        squareFeet.onfocus = ()=>{
-
-            squareFeet.value =
-                parseNumber(squareFeet.value) || "";
-
-        };
-
-        squareFeet.onblur = ()=>{
-
-            if(squareFeet.value==="") return;
-
-            squareFeet.value =
-                formatNumber(squareFeet.value);
-
-        };
-});
-
-function initializeCommission(){
-
-    document
-    .getElementById("squareFeet")
-    .addEventListener("input", ()=>{
-
-        const method = document.querySelector(
-            'input[name="commissionMethod"]:checked'
-        ).value;
-
-        if(method==="perSF"){
-
-            syncCommissionSchedule();
-
-        }
-
-    });
-
-    initializeCommissionMethod();
-
-    syncCommissionSchedule();
-
-}
-
-function initializeCommissionMethod(){
-
-    const radios = document.querySelectorAll(
-        'input[name="commissionMethod"]'
-    );
-
-    radios.forEach(radio=>{
-
-        radio.addEventListener("change",showCommissionPanel);
-
-    });
-
-    showCommissionPanel();
-
-}
-
-function showCommissionPanel(){
-
-    const method = document.querySelector(
-        'input[name="commissionMethod"]:checked'
-    ).value;
-
-    document
-        .querySelectorAll(".commission-panel")
-        .forEach(panel=>{
-
-            panel.classList.add("hidden");
-
-        });
-
-    switch(method){
-
-        case "percentage":
-
-            document
-                .getElementById("percentagePanel")
-                .classList.remove("hidden");
-
-            break;
-
-        case "perSF":
-
-            document
-                .getElementById("perSFPanel")
-                .classList.remove("hidden");
-
-            break;
-
-        case "flatFee":
-
-            document
-                .getElementById("flatFeePanel")
-                .classList.remove("hidden");
-
-            break;
-
-    }
-
-
-
-    syncCommissionSchedule();
-
-}
-
-function syncCommissionSchedule(){
-
-    const container =
-        document.getElementById("commissionContainer");
-
-    container.innerHTML = "";
-
-    const method = document.querySelector(
-        'input[name="commissionMethod"]:checked'
-    ).value;
-
-    if(method === "percentage"){
-
-        document.querySelectorAll(".lease-card")
-            .forEach((lease,index)=>{
-
-                container.appendChild(
-                    createPercentageRow(lease,index+1)
-                );
-
-            });
-
-    }
-
-    else if(method === "perSF"){
-
-        const years = getLeaseYears();
-
-        for(let i=1;i<=years;i++){
-
-            container.appendChild(
-                createPerSFRow(i)
-            );
-
-        }
-
-    }
-
-    else if(method === "flatFee"){
-
-        container.appendChild(
-            createFlatFeeRow()
-        );
-
-    }
-
-    attachCommissionEvents();
-    calculateCommission();
-
-}
-
-function getLeaseYears(){
-
-    let totalMonths = 0;
-
-    document
-        .querySelectorAll(".leaseMonths")
-        .forEach(input=>{
-
-            totalMonths += parseInt(input.value) || 0;
-
-        });
-
-    return Math.max(
-        1,
-        Math.ceil(totalMonths / 12)
-    );
-
-}
-
-function createPercentageRow(lease,index){
-
-    const row=document.createElement("div");
-
-    row.className="commission-row";
-
-    row.innerHTML=`
-
-        <div class="commission-title">
-
-            Lease Period ${index}
-
-        </div>
-
-        <div class="commission-grid">
-
-            <div class="form-group">
-
-                <label>From</label>
-
-                <input
-                    type="text"
-                    value="${lease.querySelector(".leaseStartDate").value}"
-                    readonly>
-
-            </div>
-
-            <div class="form-group">
-
-                <label>To</label>
-
-                <input
-                    type="text"
-                    value="${lease.querySelector(".leaseEndDate").value}"
-                    readonly>
-
-            </div>
-
-            <div class="form-group">
-
-                <label>Period Net Rent</label>
-
-                <input
-                    type="text"
-                    value="${lease.querySelector(".leaseNetRent").value}"
-                    readonly>
-
-            </div>
-
-            <div class="form-group">
-
-                <label>Commissionable Amount</label>
-
-                <input
-                    class="commissionable"
-                    type="text"
-                    value="${lease.querySelector(".leaseNetRent").value}"
-                    readonly>
-
-            </div>
-
-            <div class="form-group">
-
-                <label class="commissionRateLabel">
-                    Commission Rate (%)
-                </label>
-
-                <input
-                    class="commissionRate"
-                    type="number"
-                    placeholder="0">
-
-            </div>
-
-            <div class="form-group">
-
-                <label>Commission Amount</label>
-
-                <input
-                    class="commissionAmount"
-                    type="text"
-                    readonly>
-
-            </div>
-
-        </div>
-
-    `;
-
-    return row;
-
-}
-
-function createPerSFRow(year){
-
-    const row=document.createElement("div");
-
-    row.className="commission-row";
-
-    const sf =
-    parseNumber(
-        document.getElementById("squareFeet").value
-    );
-
-    row.innerHTML=`
-
-        <div class="commission-title">
-
-            Year ${year}
-
-        </div>
-
-        <div class="commission-grid">
-
-            <div class="form-group">
-
-                <label>Square Feet</label>
-
-                <input
-                    class="commissionSF"
-                    value="${formatNumber(sf)}"
-                    readonly>
-
-            </div>
-
-            <div class="form-group">
-
-                <label>Rate / SF</label>
-
-                <input
-                    class="commissionRate"
-                    type="number">
-
-            </div>
-
-            <div class="form-group">
-
-                <label>Commission Amount</label>
-
-                <input
-                    class="commissionAmount"
-                    readonly>
-
-            </div>
-
-        </div>
-
-    `;
-
-    return row;
-
-}
-
-function createFlatFeeRow(){
-
-    const row = document.createElement("div");
-
-    row.className = "commission-row";
-
-    row.innerHTML = `
-
-        <div class="commission-grid">
-
-            <div class="form-group">
-
-                <label>Flat Fee</label>
-
-                <input
-                    class="commissionRate"
-                    type="number">
-
-            </div>
-
-            <div class="form-group">
-
-                <label>Commission Amount</label>
-
-                <input
-                    class="commissionAmount"
-                    readonly>
-
-            </div>
-
-        </div>
-
-    `;
-
-    return row;
-
-}
-
-
-function attachCommissionEvents(){
-
-    document
-        .querySelectorAll(".commissionRate")
-        .forEach(input=>{
-
-            input.oninput = calculateCommission;
-
-        });
-
-}
-
-function calculateCommission(){
-
-    let totalCommission = 0;
-
-    const method = document.querySelector(
-        'input[name="commissionMethod"]:checked'
-    )?.value;
-
-    if(!method) return;
-
-    document
-        .querySelectorAll(".commission-row")
-        .forEach(row=>{
-
-            let commission = 0;
-
-            const rate =
-                parseFloat(
-                    row.querySelector(".commissionRate").value
-                ) || 0;
-
-            switch(method){
-
-                // =====================================
-                // Percentage
-                // =====================================
-
-                case "percentage":{
-
-                    const commissionable =
-                        parseCurrency(
-                            row.querySelector(".commissionable").value
-                        );
-
-                    commission =
-                        commissionable * rate / 100;
-
-                    break;
-                }
-
-                // =====================================
-                // Per Square Foot
-                // =====================================
-
-                case "perSF":{
-
-                    const sf =
-                    parseNumber(
-                        row.querySelector(".commissionSF").value
-                    );
-
-                    commission =
-                        sf * rate;
-
-                    break;
-                }
-
-                // =====================================
-                // Flat Fee
-                // =====================================
-
-                case "flatFee":{
-
-                    commission = rate;
-
-                    break;
-                }
-
-            }
-
-            row.querySelector(".commissionAmount").value =
-                formatCurrency(commission);
-
-            totalCommission += commission;
-
-        });
-
-    const total =
-        document.getElementById("totalCommission");
-
-    if(total){
-
-        total.value =
-            formatCurrency(totalCommission);
-
-    }
-
-}
+"use strict";
 
 // ======================================
-// CURRENCY FORMAT
+// Data
 // ======================================
 
+const STORAGE_KEY = "brokerVoucher";
 
-function parseCurrency(value){
+const DEAL_FIELDS = [
+    "dealType",
+    "transactionType",
+    "extension",
+    "leaseExecutionDate",
+    "commencementDate",
+    "leaseExpiryDate",
+    "building",
+    "buildingAddress",
+    "squareFeet",
+    "buildingType",
+    "landlordName",
+    "landlordAddress",
+    "landlordContact",
+    "landlordRepresentedBy",
+    "tenantName",
+    "tenantAddress",
+    "tenantRepresentedBy",
+    "broker1",
+    "broker2",
+    "brokerRepresenting",
+    "coBrokerAName",
+    "coBrokerAAddress",
+    "coBrokerARepresenting",
+    "coBrokerBName",
+    "coBrokerBAddress",
+    "coBrokerBRepresenting"
+];
 
-    return parseFloat(
-        value.replace(/[^\d.-]/g,"")
-    ) || 0;
+const COMMISSION_METHOD_LABELS = {
+    percentage: "Percentage",
+    perSF: "Per Square Foot",
+    flatFee: "Flat Fee"
+};
 
-}
+let formData = createDefaultFormData();
 
-function formatCurrency(value){
-
-    return value.toLocaleString("en-US",{
-        style:"currency",
-        currency:"USD",
-        minimumFractionDigits:2
-    });
-
-}
-
-function formatCurrencyInput(input){
-
-    let value = input.value.replace(/[^\d.]/g,"");
-
-    if(value === ""){
-
-        input.value = "";
-        return;
-
-    }
-
-    input.value = formatCurrency(parseFloat(value));
-
-}
-
-function currencyFocus(input){
-
-    input.value = parseCurrency(input.value) || "";
-
-}
-
-function currencyBlur(input){
-
-    if(input.value === "") return;
-
-    input.value = formatCurrency(
-        parseFloat(input.value)
-    );
-
-}
-
-// ======================================
-// NUMBER FORMAT
-// ======================================
-
-function formatNumber(value){
-
-    return Number(value).toLocaleString("en-US");
-
-}
-
-function parseNumber(value){
-
-    return parseFloat(
-        value.replace(/,/g,"")
-    ) || 0;
-
-}
-
-
-// ======================================
-// Broker Voucher
-// ======================================
+let elements = {};
 
 const BrokerVoucher = {
-
     currentStep: 0,
-
     pages: [],
-
     steps: [],
 
     init() {
-
         this.pages = document.querySelectorAll(".page");
         this.steps = document.querySelectorAll(".stepper a");
 
         this.initializeNavigation();
         this.initializeButtons();
-
-        this.showStep(0);
-
+        this.showStep(this.currentStep);
     },
 
     initializeNavigation() {
-
         this.steps.forEach((step, index) => {
-
-            step.addEventListener("click", (e) => {
-
-                e.preventDefault();
-
+            step.addEventListener("click", (event) => {
+                event.preventDefault();
                 this.showStep(index);
-
             });
-
         });
-
     },
 
     initializeButtons() {
-
-        document.addEventListener("click", (e) => {
-
-            if (e.target.matches(".btn-next")) {
-
+        document.addEventListener("click", (event) => {
+            if (event.target.matches(".btn-next")) {
                 this.next();
-
             }
 
-            if (e.target.matches(".btn-prev")) {
-
+            if (event.target.matches(".btn-prev")) {
                 this.previous();
-
             }
-
         });
-
     },
 
     showStep(index) {
+        if (!this.pages[index] || !this.steps[index]) return;
 
         this.currentStep = index;
+        renderStepper();
 
-        this.pages.forEach(page => {
-
-            page.classList.remove("active-page");
-
-        });
-
-        this.steps.forEach(step => {
-
-            step.classList.remove("active");
-
-        });
-
-        this.pages[index].classList.add("active-page");
-
-        this.steps[index].classList.add("active");
-
-            // Update Summary ketika membuka Step 4
-
-        if(index === 3){
-
-            updateSummary();
-
+        if (index === 3) {
+            calculateSummary();
+            renderSummary();
         }
-
     },
 
     next() {
-
         if (this.currentStep >= this.pages.length - 1) return;
-
         this.showStep(this.currentStep + 1);
-
     },
 
     previous() {
-
         if (this.currentStep <= 0) return;
-
         this.showStep(this.currentStep - 1);
-
     }
-
-    
-
 };
 
-function initializeLease(){
+document.addEventListener("DOMContentLoaded", initApp);
 
-    attachLeaseEvents();
-
-    btnAddLease.addEventListener("click", addLeaseCard);
-
+function initApp() {
+    cacheElements();
+    loadForm();
+    normalizeFormData();
+    bindEvents();
+    calculateAll();
+    renderAll();
+    BrokerVoucher.init();
 }
 
-function addLeaseCard(){
+function createDefaultFormData() {
+    return {
+        deal: createDefaultDealData(),
+        lease: [createLeaseData()],
+        commission: createDefaultCommissionData(),
+        summary: createDefaultSummaryData()
+    };
+}
 
-    const cards = document.querySelectorAll(".lease-card");
+function createDefaultDealData() {
+    return DEAL_FIELDS.reduce((deal, field) => {
+        deal[field] = "";
+        return deal;
+    }, {});
+}
 
-    const lastCard = cards[cards.length-1];
+function createLeaseData() {
+    return {
+        startDate: "",
+        endDate: "",
+        months: 0,
+        monthlyRent: 0,
+        escalation: 0,
+        additionalCost: 0,
+        netRent: 0,
+        grossRent: 0
+    };
+}
 
-    const clone = lastCard.cloneNode(true);
+function createDefaultCommissionData() {
+    return {
+        method: "percentage",
+        percentageRows: [],
+        perSFRows: [],
+        flatFee: {
+            fee: 0,
+            amount: 0
+        },
+        total: 0
+    };
+}
 
-    // reset values
-    clone.querySelectorAll("input").forEach(input=>{
+function createDefaultSummaryData() {
+    return {
+        coBrokerA: 0,
+        coBrokerB: 0,
+        baseDistribution: 0,
+        broker1: 0,
+        broker2: 0,
+        invoice: 0,
+        invoiceFee: 0,
+        clientFee: 0,
+        method: "Percentage"
+    };
+}
 
-        input.value = "";
+function normalizeFormData() {
+    const defaults = createDefaultFormData();
+    const savedDeal = formData.deal || {};
 
+    formData = {
+        deal: {
+            ...defaults.deal,
+            ...savedDeal,
+            squareFeet: parseNumber(savedDeal.squareFeet)
+        },
+        lease: Array.isArray(formData.lease) && formData.lease.length
+            ? formData.lease.map(normalizeLease)
+            : defaults.lease,
+        commission: normalizeCommission(formData.commission),
+        summary: normalizeSummary(formData.summary)
+    };
+
+    syncCommissionRows();
+}
+
+function normalizeLease(lease) {
+    return {
+        ...createLeaseData(),
+        startDate: lease.startDate || lease.start || "",
+        endDate: lease.endDate || lease.end || "",
+        months: parseNumber(lease.months),
+        monthlyRent: parseCurrency(lease.monthlyRent),
+        escalation: parseNumber(lease.escalation),
+        additionalCost: parseCurrency(lease.additionalCost),
+        netRent: parseCurrency(lease.netRent),
+        grossRent: parseCurrency(lease.grossRent)
+    };
+}
+
+function normalizeCommission(commission = {}) {
+    const defaults = createDefaultCommissionData();
+    const method = Object.prototype.hasOwnProperty.call(
+        COMMISSION_METHOD_LABELS,
+        commission.method
+    )
+        ? commission.method
+        : defaults.method;
+
+    return {
+        method,
+        percentageRows: Array.isArray(commission.percentageRows)
+            ? commission.percentageRows.map(row => ({
+                rate: parseNumber(row.rate),
+                amount: parseCurrency(row.amount)
+            }))
+            : normalizeLegacyCommissionRows(commission.rows),
+        perSFRows: Array.isArray(commission.perSFRows)
+            ? commission.perSFRows.map(row => ({
+                year: parseNumber(row.year),
+                rate: parseNumber(row.rate),
+                amount: parseCurrency(row.amount)
+            }))
+            : defaults.perSFRows,
+        flatFee: {
+            ...defaults.flatFee,
+            fee: parseCurrency(commission.flatFee?.fee),
+            amount: parseCurrency(commission.flatFee?.amount)
+        },
+        total: parseCurrency(commission.total)
+    };
+}
+
+function normalizeSummary(summary = {}) {
+    const defaults = createDefaultSummaryData();
+
+    return {
+        ...defaults,
+        ...summary,
+        coBrokerA: parseCurrency(summary.coBrokerA),
+        coBrokerB: parseCurrency(summary.coBrokerB),
+        baseDistribution: parseCurrency(summary.baseDistribution),
+        broker1: parseCurrency(summary.broker1),
+        broker2: parseCurrency(summary.broker2),
+        invoice: parseCurrency(summary.invoice),
+        invoiceFee: parseCurrency(summary.invoiceFee),
+        clientFee: parseCurrency(summary.clientFee)
+    };
+}
+
+function normalizeLegacyCommissionRows(rows) {
+    if (!Array.isArray(rows)) return [];
+
+    return rows.map(row => ({
+        rate: parseNumber(row.rate),
+        amount: parseCurrency(row.amount)
+    }));
+}
+
+// ======================================
+// Element Cache
+// ======================================
+
+function cacheElements() {
+    elements = {
+        leaseContainer: getElement("leaseContainer"),
+        btnAddLease: getElement("btnAddLease"),
+        commissionContainer: getElement("commissionContainer"),
+        totalCommission: getElement("totalCommission"),
+        percentagePanel: getElement("percentagePanel"),
+        perSFPanel: getElement("perSFPanel"),
+        flatFeePanel: getElement("flatFeePanel"),
+        commissionMethods: document.querySelectorAll('input[name="commissionMethod"]'),
+        pages: document.querySelectorAll(".page"),
+        steps: document.querySelectorAll(".stepper a")
+    };
+
+    DEAL_FIELDS.forEach(field => {
+        elements[field] = getElement(field);
+    });
+}
+
+function getElement(id) {
+    return document.getElementById(id);
+}
+
+// ======================================
+// Events
+// ======================================
+
+function bindEvents() {
+    bindDealEvents();
+    bindLeaseEvents();
+    bindCommissionEvents();
+    bindSummaryEvents();
+}
+
+function bindDealEvents() {
+    DEAL_FIELDS.forEach(field => {
+        const input = elements[field];
+        if (!input) return;
+
+        input.addEventListener("input", () => {
+            updateDealField(field, input.value);
+        });
+
+        input.addEventListener("change", () => {
+            updateDealField(field, input.value);
+        });
     });
 
-    leaseContainer.appendChild(clone);
+    if (elements.squareFeet) {
+        elements.squareFeet.addEventListener("focus", () => {
+            elements.squareFeet.value = formData.deal.squareFeet || "";
+        });
 
-    updateLeaseTitles();
-
-    attachLeaseEvents();
-
-    syncCommissionSchedule();
-
+        elements.squareFeet.addEventListener("blur", () => {
+            formData.deal.squareFeet = parseNumber(elements.squareFeet.value);
+            renderDeal();
+            syncCommissionRows();
+            calculateAll();
+            renderCommission();
+            renderSummary();
+            saveForm();
+        });
+    }
 }
 
-function updateLeaseTitles(){
-
-    document.querySelectorAll(".lease-card").forEach((card,index)=>{
-
-        card.querySelector("h2").textContent =
-        `Lease Period ${index+1}`;
-
-    });
-
-}
-
-function deleteLease(card){
-
-    const cards = document.querySelectorAll(".lease-card");
-
-    if(cards.length===1) return;
-
-    card.remove();
-
-    updateLeaseTitles();
-
-    syncCommissionSchedule();
-
-}
-
-function attachLeaseEvents(){
-
-    document.querySelectorAll(".lease-card").forEach(card=>{
-
-        // Delete
-        const btnDelete = card.querySelector(".btnDeleteLease");
-
-        btnDelete.onclick = ()=>{
-
-            deleteLease(card);
-
-        };
-
-        // Start Date
-        card.querySelector(".leaseStartDate")
-        .onchange = ()=>calculateLease(card);
-
-        // End Date
-        card.querySelector(".leaseEndDate")
-        .onchange = ()=>calculateLease(card);
-
-        // Monthly Rent
-        const monthly =
-        card.querySelector(".leaseMonthlyRent");
-
-        monthly.onfocus = ()=>{
-
-            currencyFocus(monthly);
-
-        };
-
-        monthly.onblur = ()=>{
-
-            currencyBlur(monthly);
-
-            calculateLease(card);
-
-        };
-
-        // Additional Cost
-        const additional =
-        card.querySelector(".leaseAdditionalCost");
-
-        additional.onfocus = ()=>{
-
-            currencyFocus(additional);
-
-        };
-
-        additional.onblur = ()=>{
-
-            currencyBlur(additional);
-
-            calculateLease(card);
-
-        };
-
-    });
-
-}
-
-function calculateLease(card){
-
-    const start =
-        card.querySelector(".leaseStartDate").value;
-
-    const end =
-        card.querySelector(".leaseEndDate").value;
-
-    const monthly =
-    parseCurrency(
-        card.querySelector(".leaseMonthlyRent").value
-    );
-
-    const additional =
-    parseCurrency(
-        card.querySelector(".leaseAdditionalCost").value
-    );
-
-    if(start && end){
-
-        const s = new Date(start);
-        const e = new Date(end);
-
-        const months =
-            (e.getFullYear()-s.getFullYear())*12 +
-            (e.getMonth()-s.getMonth()) + 1;
-
-        card.querySelector(".leaseMonths").value =
-            months;
-
-        const net = months * monthly;
-
-        const gross = months * (monthly + additional);
-
-        card.querySelector(".leaseNetRent").value =
-        formatCurrency(net);
-
-        card.querySelector(".leaseGrossRent").value =
-        formatCurrency(gross);
-
-            syncCommissionSchedule();
-
+function bindLeaseEvents() {
+    if (elements.btnAddLease) {
+        elements.btnAddLease.addEventListener("click", () => {
+            addLease();
+        });
     }
 
+    if (!elements.leaseContainer) return;
+
+    elements.leaseContainer.addEventListener("input", (event) => {
+        const input = event.target;
+        const index = getLeaseIndex(input);
+        const field = getLeaseField(input);
+
+        if (index === null || !field) return;
+
+        updateLeaseField(index, field, input.value);
+    });
+
+    elements.leaseContainer.addEventListener("change", (event) => {
+        const input = event.target;
+        const index = getLeaseIndex(input);
+        const field = getLeaseField(input);
+
+        if (index === null || !field) return;
+
+        updateLeaseField(index, field, input.value);
+        calculateLease(index);
+        syncCommissionRows();
+        calculateAll();
+        renderLease();
+        renderCommission();
+        renderSummary();
+        saveForm();
+    });
+
+    elements.leaseContainer.addEventListener("focusin", (event) => {
+        const input = event.target;
+
+        if (input.matches(".leaseMonthlyRent, .leaseAdditionalCost")) {
+            input.value = parseCurrency(input.value) || "";
+        }
+    });
+
+    elements.leaseContainer.addEventListener("focusout", (event) => {
+        const input = event.target;
+        const index = getLeaseIndex(input);
+        const field = getLeaseField(input);
+
+        if (index === null || !field) return;
+
+        updateLeaseField(index, field, input.value);
+        calculateLease(index);
+        syncCommissionRows();
+        calculateAll();
+        renderLease();
+        renderCommission();
+        renderSummary();
+        saveForm();
+    });
+
+    elements.leaseContainer.addEventListener("click", (event) => {
+        const button = event.target.closest(".btnDeleteLease");
+        if (!button) return;
+
+        const index = Number(button.dataset.index);
+        deleteLease(index);
+    });
 }
 
-function calculateDistribution(){
+function bindCommissionEvents() {
+    elements.commissionMethods.forEach(radio => {
+        radio.addEventListener("change", () => {
+            if (!radio.checked) return;
 
-    const total =
-        parseCurrency(
-            document.getElementById("summaryInvoice").value
-        );
-
-    const coA =
-        parseCurrency(
-            document.getElementById("summaryCoBrokerA").value
-        );
-
-    const coB =
-        parseCurrency(
-            document.getElementById("summaryCoBrokerB").value
-        );
-
-    const base =
-        total - coA - coB;
-
-    document.getElementById("summaryBaseDistribution").value =
-        formatCurrency(base);
-
-    // sementara seluruh base untuk Broker 1
-
-    document.getElementById("summaryBroker1").value =
-        formatCurrency(base);
-
-    document.getElementById("summaryBroker2").value =
-        formatCurrency(0);
-
-}
-
-function updateSummary(){
-
-    // ======================================
-    // Deal
-    // ======================================
-
-    document.getElementById("summaryBuilding").value =
-        document.getElementById("building").value;
-
-    document.getElementById("summaryAddress").value =
-        document.getElementById("buildingAddress").value;
-
-    document.getElementById("summaryTenant").value =
-        document.getElementById("tenantName").value;
-
-    document.getElementById("summaryLandlord").value =
-        document.getElementById("landlordName").value;
-
-    document.getElementById("summarySF").value =
-        formatNumber(
-            parseNumber(
-                document.getElementById("squareFeet").value
-            )
-        );
-
-    document.getElementById("summaryDuration").value =
-        getLeaseYears() + " Year(s)";
-
-    // ======================================
-    // Lease
-    // ======================================
-
-    let totalNet = 0;
-    let totalGross = 0;
-
-    document.querySelectorAll(".leaseNetRent")
-        .forEach(input=>{
-
-            totalNet += parseCurrency(input.value);
-
+            formData.commission.method = radio.value;
+            syncCommissionRows();
+            calculateAll();
+            renderCommission();
+            renderSummary();
+            saveForm();
         });
+    });
 
-    document.querySelectorAll(".leaseGrossRent")
-        .forEach(input=>{
+    if (!elements.commissionContainer) return;
 
-            totalGross += parseCurrency(input.value);
+    elements.commissionContainer.addEventListener("input", (event) => {
+        const input = event.target;
+        if (!input.matches(".commissionRate")) return;
 
-        });
-
-    document.getElementById("summaryNetRent").value =
-        formatCurrency(totalNet);
-
-    document.getElementById("summaryGrossRent").value =
-        formatCurrency(totalGross);
-
-    // ======================================
-    // Commission
-    // ======================================
-
-    const totalCommission =
-        parseCurrency(
-            document.getElementById("totalCommission").value
-        );
-
-    const method =
-        document.querySelector(
-            'input[name="commissionMethod"]:checked'
-        ).nextElementSibling.innerText;
-
-    document.getElementById("summaryMethod").value =
-        method;
-
-    document.getElementById("summaryInvoice").value =
-        formatCurrency(totalCommission);
-
-    document.getElementById("summaryInvoiceFee").value =
-        formatCurrency(totalCommission);
-
-    document.getElementById("summaryClientFee").value =
-        formatCurrency(totalCommission);
-
-    // ======================================
-    // Dynamic Labels
-    // ======================================
-
-    document.getElementById("coBrokerALabel").textContent =
-        document.getElementById("coBrokerAName").value || "Co-Broker A";
-
-    document.getElementById("coBrokerBLabel").textContent =
-        document.getElementById("coBrokerBName").value || "Co-Broker B";
-
-    document.getElementById("broker1Label").textContent =
-        document.getElementById("broker1").value || "Broker 1";
-
-    document.getElementById("broker2Label").textContent =
-        document.getElementById("broker2").value || "Broker 2";
-
-    // ======================================
-    // Distribution
-    // ======================================
-
-    calculateDistribution();
-
+        updateCommissionRate(input);
+        calculateAll();
+        renderCommissionOutputs();
+        renderSummary();
+        saveForm();
+    });
 }
 
+function bindSummaryEvents() {
+    const coBrokerA = getElement("summaryCoBrokerA");
+    const coBrokerB = getElement("summaryCoBrokerB");
 
+    bindSummaryCurrencyInput(coBrokerA, "coBrokerA");
+    bindSummaryCurrencyInput(coBrokerB, "coBrokerB");
+}
 
+function bindSummaryCurrencyInput(input, field) {
+    if (!input) return;
+
+    input.addEventListener("focus", () => {
+        input.value = formData.summary[field] || "";
+    });
+
+    input.addEventListener("input", () => {
+        formData.summary[field] = parseCurrency(input.value);
+        calculateSummary();
+        renderSummaryOutputs();
+        saveForm();
+    });
+
+    input.addEventListener("blur", () => {
+        formData.summary[field] = parseCurrency(input.value);
+        calculateSummary();
+        renderSummary();
+        saveForm();
+    });
+}
+
+// ======================================
+// Deal
+// ======================================
+
+function updateDealField(field, value) {
+    if (!Object.prototype.hasOwnProperty.call(formData.deal, field)) return;
+
+    formData.deal[field] = field === "squareFeet"
+        ? parseNumber(value)
+        : value;
+
+    syncCommissionRows();
+    calculateAll();
+    renderCommission();
+    renderSummary();
+    saveForm();
+}
+
+function renderDeal() {
+    DEAL_FIELDS.forEach(field => {
+        const input = elements[field];
+        if (!input) return;
+
+        if (field === "squareFeet") {
+            input.value = formData.deal.squareFeet
+                ? formatNumber(formData.deal.squareFeet)
+                : "";
+            return;
+        }
+
+        input.value = formData.deal[field] || "";
+    });
+}
+
+// ======================================
+// Lease
+// ======================================
+
+function addLease() {
+    formData.lease.push(createLeaseData());
+    syncCommissionRows();
+    calculateAll();
+    renderLease();
+    renderCommission();
+    renderSummary();
+    saveForm();
+}
+
+function deleteLease(index) {
+    if (formData.lease.length <= 1 || !formData.lease[index]) return;
+
+    formData.lease.splice(index, 1);
+    formData.commission.percentageRows.splice(index, 1);
+    syncCommissionRows();
+    calculateAll();
+    renderLease();
+    renderCommission();
+    renderSummary();
+    saveForm();
+}
+
+function updateLeaseField(index, field, value) {
+    const lease = formData.lease[index];
+    if (!lease) return;
+
+    if (field === "startDate" || field === "endDate") {
+        lease[field] = value;
+        return;
+    }
+
+    lease[field] = parseCurrency(value);
+}
+
+function calculateLease(index) {
+    const lease = formData.lease[index];
+    if (!lease) return;
+
+    lease.months = calculateLeaseMonths(lease.startDate, lease.endDate);
+    lease.netRent = lease.months * lease.monthlyRent;
+    lease.grossRent = lease.months * (lease.monthlyRent + lease.additionalCost);
+}
+
+function calculateAllLeases() {
+    formData.lease.forEach((lease, index) => {
+        calculateLease(index);
+    });
+}
+
+function calculateLeaseMonths(startDate, endDate) {
+    if (!startDate || !endDate) return 0;
+
+    const start = new Date(`${startDate}T00:00:00`);
+    const end = new Date(`${endDate}T00:00:00`);
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) {
+        return 0;
+    }
+
+    return ((end.getFullYear() - start.getFullYear()) * 12) +
+        (end.getMonth() - start.getMonth()) + 1;
+}
+
+function getLeaseYears() {
+    const totalMonths = formData.lease.reduce((total, lease) => {
+        return total + toNumber(lease.months);
+    }, 0);
+
+    return Math.max(1, Math.ceil(totalMonths / 12));
+}
+
+function renderLease() {
+    if (!elements.leaseContainer) return;
+
+    elements.leaseContainer.innerHTML = formData.lease
+        .map((lease, index) => createLeaseCardHTML(lease, index))
+        .join("");
+}
+
+function createLeaseCardHTML(lease, index) {
+    return `
+        <div class="card lease-card" data-index="${index}">
+            <div class="card-header">
+                <h2>Lease Period ${index + 1}</h2>
+                <button
+                    type="button"
+                    class="btn-danger btnDeleteLease"
+                    data-index="${index}">
+                    Delete
+                </button>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Start Date</label>
+                    <input
+                        type="date"
+                        class="leaseStartDate"
+                        value="${escapeHTML(lease.startDate)}">
+                </div>
+
+                <div class="form-group">
+                    <label>End Date</label>
+                    <input
+                        type="date"
+                        class="leaseEndDate"
+                        value="${escapeHTML(lease.endDate)}">
+                </div>
+
+                <div class="form-group">
+                    <label>Months</label>
+                    <input
+                        type="number"
+                        class="leaseMonths"
+                        value="${lease.months || ""}"
+                        readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>Monthly Rent</label>
+                    <input
+                        type="text"
+                        class="leaseMonthlyRent"
+                        placeholder="0.00"
+                        inputmode="decimal"
+                        value="${lease.monthlyRent ? formatCurrency(lease.monthlyRent) : ""}">
+                </div>
+
+                <div class="form-group">
+                    <label>Escalation (%)</label>
+                    <input
+                        type="number"
+                        class="leaseEscalation"
+                        placeholder="0"
+                        value="${lease.escalation || ""}">
+                </div>
+
+                <div class="form-group">
+                    <label>Additional Cost</label>
+                    <input
+                        type="text"
+                        class="leaseAdditionalCost"
+                        placeholder="0.00"
+                        inputmode="decimal"
+                        value="${lease.additionalCost ? formatCurrency(lease.additionalCost) : ""}">
+                </div>
+            </div>
+
+            <div class="summary-grid-2">
+                <div class="summary-item">
+                    <label>Period Net Rent</label>
+                    <input
+                        type="text"
+                        class="leaseNetRent"
+                        value="${formatCurrency(lease.netRent)}"
+                        readonly>
+                </div>
+
+                <div class="summary-item">
+                    <label>Period Gross Rent</label>
+                    <input
+                        type="text"
+                        class="leaseGrossRent"
+                        value="${formatCurrency(lease.grossRent)}"
+                        readonly>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function getLeaseIndex(input) {
+    const card = input.closest(".lease-card");
+    if (!card) return null;
+
+    const index = Number(card.dataset.index);
+    return Number.isInteger(index) ? index : null;
+}
+
+function getLeaseField(input) {
+    if (input.matches(".leaseStartDate")) return "startDate";
+    if (input.matches(".leaseEndDate")) return "endDate";
+    if (input.matches(".leaseMonthlyRent")) return "monthlyRent";
+    if (input.matches(".leaseEscalation")) return "escalation";
+    if (input.matches(".leaseAdditionalCost")) return "additionalCost";
+    return "";
+}
+
+// ======================================
+// Commission
+// ======================================
+
+function syncCommissionRows() {
+    syncPercentageRows();
+    syncPerSFRows();
+}
+
+function syncPercentageRows() {
+    while (formData.commission.percentageRows.length < formData.lease.length) {
+        formData.commission.percentageRows.push({
+            rate: 0,
+            amount: 0
+        });
+    }
+
+    formData.commission.percentageRows.length = formData.lease.length;
+}
+
+function syncPerSFRows() {
+    const years = getLeaseYears();
+
+    while (formData.commission.perSFRows.length < years) {
+        formData.commission.perSFRows.push({
+            year: formData.commission.perSFRows.length + 1,
+            rate: 0,
+            amount: 0
+        });
+    }
+
+    formData.commission.perSFRows.length = years;
+
+    formData.commission.perSFRows.forEach((row, index) => {
+        row.year = index + 1;
+    });
+}
+
+function updateCommissionRate(input) {
+    const method = formData.commission.method;
+    const index = Number(input.dataset.index);
+    const value = parseCurrency(input.value);
+
+    if (method === "percentage" && formData.commission.percentageRows[index]) {
+        formData.commission.percentageRows[index].rate = value;
+    }
+
+    if (method === "perSF" && formData.commission.perSFRows[index]) {
+        formData.commission.perSFRows[index].rate = value;
+    }
+
+    if (method === "flatFee") {
+        formData.commission.flatFee.fee = value;
+    }
+}
+
+function calculateCommission() {
+    let total = 0;
+
+    if (formData.commission.method === "percentage") {
+        formData.commission.percentageRows.forEach((row, index) => {
+            const lease = formData.lease[index] || createLeaseData();
+            row.amount = lease.netRent * toNumber(row.rate) / 100;
+            total += row.amount;
+        });
+    }
+
+    if (formData.commission.method === "perSF") {
+        const squareFeet = toNumber(formData.deal.squareFeet);
+
+        formData.commission.perSFRows.forEach(row => {
+            row.amount = squareFeet * toNumber(row.rate);
+            total += row.amount;
+        });
+    }
+
+    if (formData.commission.method === "flatFee") {
+        formData.commission.flatFee.amount = toNumber(formData.commission.flatFee.fee);
+        total = formData.commission.flatFee.amount;
+    }
+
+    formData.commission.total = total;
+}
+
+function renderCommission() {
+    renderCommissionMethod();
+    renderCommissionPanels();
+
+    if (!elements.commissionContainer) return;
+
+    if (formData.commission.method === "percentage") {
+        elements.commissionContainer.innerHTML = formData.lease
+            .map((lease, index) => createPercentageRowHTML(lease, index))
+            .join("");
+    }
+
+    if (formData.commission.method === "perSF") {
+        elements.commissionContainer.innerHTML = formData.commission.perSFRows
+            .map((row, index) => createPerSFRowHTML(row, index))
+            .join("");
+    }
+
+    if (formData.commission.method === "flatFee") {
+        elements.commissionContainer.innerHTML = createFlatFeeRowHTML();
+    }
+
+    renderCommissionOutputs();
+}
+
+function renderCommissionMethod() {
+    elements.commissionMethods.forEach(radio => {
+        radio.checked = radio.value === formData.commission.method;
+    });
+}
+
+function renderCommissionPanels() {
+    const panels = {
+        percentage: elements.percentagePanel,
+        perSF: elements.perSFPanel,
+        flatFee: elements.flatFeePanel
+    };
+
+    Object.entries(panels).forEach(([method, panel]) => {
+        if (!panel) return;
+        panel.classList.toggle("hidden", method !== formData.commission.method);
+    });
+}
+
+function createPercentageRowHTML(lease, index) {
+    const row = formData.commission.percentageRows[index] || { rate: 0, amount: 0 };
+
+    return `
+        <div class="commission-row" data-index="${index}">
+            <div class="commission-title">
+                Lease Period ${index + 1}
+            </div>
+
+            <div class="commission-grid">
+                <div class="form-group">
+                    <label>From</label>
+                    <input
+                        type="text"
+                        value="${escapeHTML(lease.startDate)}"
+                        readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>To</label>
+                    <input
+                        type="text"
+                        value="${escapeHTML(lease.endDate)}"
+                        readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>Period Net Rent</label>
+                    <input
+                        type="text"
+                        value="${formatCurrency(lease.netRent)}"
+                        readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>Commissionable Amount</label>
+                    <input
+                        class="commissionable"
+                        type="text"
+                        value="${formatCurrency(lease.netRent)}"
+                        readonly>
+                </div>
+
+                <div class="form-group">
+                    <label class="commissionRateLabel">
+                        Commission Rate (%)
+                    </label>
+                    <input
+                        class="commissionRate"
+                        data-index="${index}"
+                        type="number"
+                        placeholder="0"
+                        value="${row.rate || ""}">
+                </div>
+
+                <div class="form-group">
+                    <label>Commission Amount</label>
+                    <input
+                        class="commissionAmount"
+                        type="text"
+                        value="${formatCurrency(row.amount)}"
+                        readonly>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createPerSFRowHTML(row, index) {
+    return `
+        <div class="commission-row" data-index="${index}">
+            <div class="commission-title">
+                Year ${index + 1}
+            </div>
+
+            <div class="commission-grid">
+                <div class="form-group">
+                    <label>Square Feet</label>
+                    <input
+                        class="commissionSF"
+                        value="${formatNumber(formData.deal.squareFeet)}"
+                        readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>Rate / SF</label>
+                    <input
+                        class="commissionRate"
+                        data-index="${index}"
+                        type="number"
+                        value="${row.rate || ""}">
+                </div>
+
+                <div class="form-group">
+                    <label>Commission Amount</label>
+                    <input
+                        class="commissionAmount"
+                        value="${formatCurrency(row.amount)}"
+                        readonly>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createFlatFeeRowHTML() {
+    return `
+        <div class="commission-row">
+            <div class="commission-grid">
+                <div class="form-group">
+                    <label>Flat Fee</label>
+                    <input
+                        class="commissionRate"
+                        data-index="0"
+                        type="number"
+                        value="${formData.commission.flatFee.fee || ""}">
+                </div>
+
+                <div class="form-group">
+                    <label>Commission Amount</label>
+                    <input
+                        class="commissionAmount"
+                        value="${formatCurrency(formData.commission.flatFee.amount)}"
+                        readonly>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderCommissionOutputs() {
+    if (elements.totalCommission) {
+        elements.totalCommission.value = formatCurrency(formData.commission.total);
+    }
+
+    if (!elements.commissionContainer) return;
+
+    elements.commissionContainer.querySelectorAll(".commission-row").forEach((row, index) => {
+        const amountInput = row.querySelector(".commissionAmount");
+        if (!amountInput) return;
+
+        if (formData.commission.method === "percentage") {
+            amountInput.value = formatCurrency(formData.commission.percentageRows[index]?.amount || 0);
+        }
+
+        if (formData.commission.method === "perSF") {
+            amountInput.value = formatCurrency(formData.commission.perSFRows[index]?.amount || 0);
+        }
+
+        if (formData.commission.method === "flatFee") {
+            amountInput.value = formatCurrency(formData.commission.flatFee.amount);
+        }
+    });
+}
+
+// ======================================
+// Summary
+// ======================================
+
+function calculateSummary() {
+    const totalCommission = toNumber(formData.commission.total);
+    const coBrokerA = toNumber(formData.summary.coBrokerA);
+    const coBrokerB = toNumber(formData.summary.coBrokerB);
+    const baseDistribution = totalCommission - coBrokerA - coBrokerB;
+
+    formData.summary.invoice = totalCommission;
+    formData.summary.invoiceFee = totalCommission;
+    formData.summary.clientFee = totalCommission;
+    formData.summary.method = COMMISSION_METHOD_LABELS[formData.commission.method] || "";
+    formData.summary.baseDistribution = baseDistribution;
+    formData.summary.broker1 = baseDistribution;
+    formData.summary.broker2 = baseDistribution;
+}
+
+function renderSummary() {
+    setFieldValue("summaryInvoice", formatCurrency(formData.summary.invoice));
+    setFieldValue("summaryInvoiceFee", formatCurrency(formData.summary.invoiceFee));
+    setFieldValue("summaryClientFee", formatCurrency(formData.summary.clientFee));
+    setFieldValue("summaryMethod", formData.summary.method);
+    setFieldValue("summaryCoBrokerA", formData.summary.coBrokerA ? formatCurrency(formData.summary.coBrokerA) : "");
+    setFieldValue("summaryCoBrokerB", formData.summary.coBrokerB ? formatCurrency(formData.summary.coBrokerB) : "");
+
+    renderSummaryOutputs();
+    renderSummaryLabels();
+}
+
+function renderSummaryOutputs() {
+    setFieldValue("summaryBaseDistribution", formatCurrency(formData.summary.baseDistribution));
+    setFieldValue("summaryBroker1", formatCurrency(formData.summary.broker1));
+    setFieldValue("summaryBroker2", formatCurrency(formData.summary.broker2));
+}
+
+function renderSummaryLabels() {
+    setTextContent("coBrokerALabel", formData.deal.coBrokerAName || "Co-Broker A");
+    setTextContent("coBrokerBLabel", formData.deal.coBrokerBName || "Co-Broker B");
+    setTextContent("broker1Label", formData.deal.broker1 || "Broker 1");
+    setTextContent("broker2Label", formData.deal.broker2 || "Broker 2");
+}
+
+// ======================================
+// Render
+// ======================================
+
+function renderAll() {
+    renderDeal();
+    renderLease();
+    renderCommission();
+    renderSummary();
+    renderStepper();
+}
+
+function renderStepper() {
+    const pages = BrokerVoucher.pages.length ? BrokerVoucher.pages : elements.pages;
+    const steps = BrokerVoucher.steps.length ? BrokerVoucher.steps : elements.steps;
+
+    pages.forEach((page, index) => {
+        page.classList.toggle("active-page", index === BrokerVoucher.currentStep);
+    });
+
+    steps.forEach((step, index) => {
+        step.classList.toggle("active", index === BrokerVoucher.currentStep);
+    });
+}
+
+// ======================================
+// Storage
+// ======================================
+
+function saveForm() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+    } catch (error) {
+        console.warn("Unable to save broker voucher form.", error);
+    }
+}
+
+function loadForm() {
+    try {
+        const savedData = localStorage.getItem(STORAGE_KEY);
+        if (!savedData) return;
+
+        formData = JSON.parse(savedData);
+    } catch (error) {
+        console.warn("Unable to load broker voucher form.", error);
+        formData = createDefaultFormData();
+    }
+}
+
+// ======================================
+// Calculations
+// ======================================
+
+function calculateAll() {
+    calculateAllLeases();
+    syncCommissionRows();
+    calculateCommission();
+    calculateSummary();
+}
+
+// ======================================
+// Formatting
+// ======================================
+
+function parseCurrency(value) {
+    if (value === null || value === undefined) return 0;
+
+    return parseFloat(String(value).replace(/[^\d.-]/g, "")) || 0;
+}
+
+function formatCurrency(value) {
+    return toNumber(value).toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 2
+    });
+}
+
+function formatNumber(value) {
+    const number = toNumber(value);
+    return number ? number.toLocaleString("en-US") : "";
+}
+
+function parseNumber(value) {
+    if (value === null || value === undefined) return 0;
+
+    return parseFloat(String(value).replace(/,/g, "")) || 0;
+}
+
+function toNumber(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : 0;
+}
+
+// ======================================
+// UI Helpers
+// ======================================
+
+function setFieldValue(id, value) {
+    const element = getElement(id);
+    if (!element) return;
+
+    element.value = value;
+}
+
+function setTextContent(id, value) {
+    const element = getElement(id);
+    if (!element) return;
+
+    element.textContent = value;
+}
+
+function escapeHTML(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}

@@ -30,42 +30,39 @@
 
             <div class="header-top">
 
-            <div class="logo">
+                <div class="logo">
 
-                <img
-                    src="odney-group-logo.png"
-                    alt="Odney Group"
-                    class="logo-image">
+                    <img
+                        src="odney-group-logo.png"
+                        alt="Odney Group"
+                        class="logo-image">
 
-            </div>
+                </div>
 
                 <nav class="stepper">
 
-                    <a href="#deal-information" class="active">
-                        <span>1</span>
-                        Deal
-                    </a>
+                        <a href="#deal-information" class="active">
+                            <span>1</span>
+                            Deal
+                        </a>
 
-                    <a href="#lease">
-                        <span>2</span>
-                        Lease
-                    </a>
+                        <a href="#lease">
+                            <span>2</span>
+                            Lease
+                        </a>
 
-                    <a href="#commission">
-                        <span>3</span>
-                        Commission
-                    </a>
+                        <a href="#commission">
+                            <span>3</span>
+                            Commission
+                        </a>
 
-                    <a href="#summary">
-                        <span>4</span>
-                        Summary
-                    </a>
+                        <a href="#summary">
+                            <span>4</span>
+                            Summary
+                        </a>
 
                 </nav>
 
-                <button id="btnGenerateInvoice">
-                    Generate Invoice
-                </button>
 
             </div>
 
@@ -397,14 +394,19 @@
 
                 </div>
 
+                <!-- Wizard -->
                 <div class="wizard-footer">
 
-                    <button class="btn-secondary" id="btnPrevious" disabled>
+                    <button class="btn-secondary btn-prev" disabled>
+
                         Previous
+
                     </button>
 
-                    <button class="btn-primary" id="btnNext">
+                    <button class="btn-primary btn-next">
+
                         Next
+
                     </button>
 
                 </div>
@@ -768,130 +770,152 @@
             <!-- Summary -->
             <!-- ============================================== -->
 
-<!-- Commission -->
-<section class="page" id="summary">
-    <div class="card">
+            <!-- Commission -->
+            <section class="page" id="summary">
+                <div class="card">
 
-    <h2>Financial Summary</h2>
+                <h2>Financial Summary</h2>
 
-    <div class="summary-grid-2">
+                <div class="summary-grid-2">
 
-        <div class="summary-item">
+                    <div class="summary-item">
 
-            <label>Invoice</label>
+                        <label>Invoice</label>
 
-            <input id="summaryInvoice" readonly>
+                        <input id="summaryInvoice" readonly>
 
-        </div>
+                    </div>
 
-        <div class="summary-item">
+                    <div class="summary-item">
 
-            <label>Invoice Fee</label>
+                        <label>Invoice Fee</label>
 
-            <input id="summaryInvoiceFee" readonly>
+                        <input id="summaryInvoiceFee" readonly>
 
-        </div>
+                    </div>
 
-        <div class="summary-item">
+                    <div class="summary-item">
 
-            <label>Client Fee</label>
+                        <label>Client Fee</label>
 
-            <input id="summaryClientFee" readonly>
+                        <input id="summaryClientFee" readonly>
 
-        </div>
+                    </div>
 
-        <div class="summary-item">
+                    <div class="summary-item">
 
-            <label>Commission Method</label>
+                        <label>Commission Method</label>
 
-            <input id="summaryMethod" readonly>
+                        <input id="summaryMethod" readonly>
 
-        </div>
+                    </div>
 
-    </div>
+                </div>
 
-    <div class="summary-grid-2">
+                <div class="summary-grid-2">
 
-        <div class="summary-item">
+                    <div class="summary-item">
 
-            <label id="coBrokerALabel">
+                        <label id="coBrokerALabel">
 
-                Co-Broker A
+                            Co-Broker A
 
-            </label>
+                        </label>
 
-            <input
-                id="summaryCoBrokerA"
-                type="text"
-                placeholder="$0.00">
+                        <input
+                            id="summaryCoBrokerA"
+                            type="text"
+                            placeholder="$0.00">
 
-        </div>
+                    </div>
 
-        <div class="summary-item">
+                    <div class="summary-item">
 
-            <label id="coBrokerBLabel">
+                        <label id="coBrokerBLabel">
 
-                Co-Broker B
+                            Co-Broker B
 
-            </label>
+                        </label>
 
-            <input
-                id="summaryCoBrokerB"
-                type="text"
-                placeholder="$0.00">
+                        <input
+                            id="summaryCoBrokerB"
+                            type="text"
+                            placeholder="$0.00">
 
-        </div>
+                    </div>
 
-    </div>
+                </div>
 
-    <div class="summary-grid-2">
+                <div class="summary-grid-3">
 
-        <div class="summary-item">
+                    <div class="summary-item">
 
-            <label>
+                        <label>
 
-                Base for Distribution
+                            Base for Distribution
 
-            </label>
+                        </label>
 
-            <input
-                id="summaryBaseDistribution"
-                readonly>
+                        <input
+                            id="summaryBaseDistribution"
+                            readonly>
 
-        </div>
+                    </div>
 
-        <div class="summary-item">
+                    <div class="summary-item">
 
-            <label id="broker1Label">
+                        <label id="broker1Label">
 
-                Broker 1
+                            Broker 1
 
-            </label>
+                        </label>
 
-            <input
-                id="summaryBroker1"
-                readonly>
+                        <input
+                            id="summaryBroker1"
+                            readonly>
 
-        </div>
+                    </div>
 
-        <div class="summary-item">
+                    <div class="summary-item">
 
-            <label id="broker2Label">
+                        <label id="broker2Label">
 
-                Broker 2
+                            Broker 2
 
-            </label>
+                        </label>
 
-            <input
-                id="summaryBroker2"
-                readonly>
+                        <input
+                            id="summaryBroker2"
+                            readonly>
 
-        </div>
+                    </div>
 
-    </div>
+                </div>
 
-</div>
-</section>
+            </div>
+
+                            <!-- Wizard -->
+                <div class="wizard-footer">
+
+                    <button class="btn-secondary btn-prev" >
+
+                        Previous
+
+                    </button>
+
+
+                    <button
+                        id="btnGenerateInvoice"
+                        class="btn-primary btn-lg">
+
+                        Generate Broker Voucher
+
+                    </button>
+
+
+                </div>
+
+            </section>
 
 
         </main>
