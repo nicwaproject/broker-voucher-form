@@ -50,7 +50,7 @@
 
                         <a href="#lease">
                             <span>2</span>
-                            Lease
+                            Transaction
                         </a>
 
                         <a href="#commission">
@@ -99,15 +99,12 @@
 
                             <label for="dealType">Lease Deal</label>
 
-                            <input
-
-                                type="text"
-
-                                id="dealType"
-
-                                name="dealType"
-
-                                placeholder="e.g. New Lease">
+                            <select id="dealType" name="dealType">
+                                <option value="">Select Deal</option>
+                                <option value="sale">Sale</option>
+                                <option value="lease">Lease</option>
+                                <option value="other">Other</option>
+                            </select>
 
                         </div>
 
@@ -131,17 +128,14 @@
 
                         <div class="form-group">
 
-                            <label for="extension">Extension</label>
+                        <label for="extension">Subtype</label>
 
-                            <select id="extension" name="extension">
-
-                                <option value="">Select</option>
-
-                                <option>Yes</option>
-
-                                <option>No</option>
-
-                            </select>
+                        <select id="extension" name="extension">
+                            <option value="">Select Subtype</option>
+                            <option value="newDeal">New Deal</option>
+                            <option value="renewal">Renewal</option>
+                            <option value="na">N/A</option>
+                        </select>
 
                         </div>
 
@@ -155,7 +149,7 @@
 
                     <div class="form-grid">
 
-                        <div class="form-group">
+                        <div class="form-group  lease-key-date">
 
                             <label for="leaseExecutionDate">
 
@@ -173,7 +167,7 @@
 
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group lease-key-date">
 
                             <label for="commencementDate">
 
@@ -191,7 +185,7 @@
 
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group lease-key-date">
 
                             <label for="leaseExpiryDate">
 
@@ -206,6 +200,32 @@
                                 id="leaseExpiryDate"
 
                                 name="leaseExpiryDate">
+
+                        </div>
+
+                        <div class="form-group sale-key-date">
+
+                            <label for="purchaseAgreementExecutionDate">
+                                Purchase Agreement Execution Date
+                            </label>
+
+                            <input
+                                type="date"
+                                id="purchaseAgreementExecutionDate"
+                                name="purchaseAgreementExecutionDate">
+
+                        </div>
+
+                        <div class="form-group sale-key-date">
+
+                            <label for="closingDate">
+                                Closing Date
+                            </label>
+
+                            <input
+                                type="date"
+                                id="closingDate"
+                                name="closingDate">
 
                         </div>
 
@@ -255,10 +275,10 @@
 
                         <div class="transaction-card">
 
-                            <h3>Landlord</h3>
+                            <h3>Landlord / Seller</h3>
 
                             <div class="form-group">
-                                <label>Landlord Name</label>
+                                <label>Landlord / Seller Name</label>
                                 <input type="text" id="landlordName">
                             </div>
 
@@ -424,11 +444,55 @@
 
                 <div class="section-header">
 
-                    <h1>Lease Schedule</h1>
+                    <h1 id="transactionTitle">
+                        Lease Schedule
+                    </h1>
 
-                    <p>
+                    <p id="transactionDescription">
                         Add one or more lease periods for this transaction.
                     </p>
+
+                </div>
+
+                <!-- ============================================== -->
+                <!-- Sale Details -->
+                <!-- ============================================== -->
+
+                <div class="card" id="saleDetails">
+
+                    <h2>Sale Details</h2>
+
+                    <div class="form-grid">
+
+                        <div class="form-group">
+
+                            <label for="saleClosingDate">
+                                Closing Date
+                            </label>
+
+                            <input
+                                type="text"
+                                id="saleClosingDate"
+                                name="saleClosingDate" readonly>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="purchasePrice">
+                                Purchase Price
+                            </label>
+
+                            <input
+                                type="text"
+                                id="purchasePrice"
+                                name="purchasePrice"
+                                placeholder="$0.00"
+                                inputmode="decimal">
+
+                        </div>
+
+                    </div>
 
                 </div>
 
@@ -850,12 +914,11 @@
 
                 <div class="summary-grid-3">
 
+                    <!-- Base -->
                     <div class="summary-item">
 
                         <label>
-
                             Base for Distribution
-
                         </label>
 
                         <input
@@ -864,34 +927,61 @@
 
                     </div>
 
+
+                    <!-- Broker 1 -->
                     <div class="summary-item">
 
                         <label id="broker1Label">
-
                             Broker 1
-
                         </label>
+
+                        <div>
+                            <input
+                            id="summaryBroker1Percent"
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            placeholder="0">
 
                         <input
                             id="summaryBroker1"
                             readonly>
+                        </div>
+                        
 
                     </div>
 
+
+                    <!-- Broker 2 -->
                     <div class="summary-item">
 
                         <label id="broker2Label">
-
                             Broker 2
-
                         </label>
+                        <div>
+                            <input
+                            id="summaryBroker2Percent"
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            placeholder="0">
 
                         <input
                             id="summaryBroker2"
                             readonly>
+                        </div>
+                        
 
                     </div>
 
+                </div>
+
+                <br>
+                <div
+                    id="distributionPercentStatus"
+                    class="distribution-status">
                 </div>
 
             </div>

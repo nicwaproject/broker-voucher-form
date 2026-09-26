@@ -37,7 +37,9 @@ const DEAL_FIELDS = [
     "coBrokerARepresenting",
     "coBrokerBName",
     "coBrokerBAddress",
-    "coBrokerBRepresenting"
+    "coBrokerBRepresenting",
+    "purchaseAgreementExecutionDate",
+    "closingDate"
 ];
 
 const COMMISSION_METHOD_LABELS = {
@@ -120,9 +122,19 @@ function initApp() {
     BrokerVoucher.init();
 }
 
+function createDefaultSaleData() {
+    return {
+        closingDate: "",
+        purchasePrice: 0
+    };
+}
+
 function createDefaultFormData() {
     return {
         deal: createDefaultDealData(),
+
+        sale: createDefaultSaleData(),
+
         lease: [createLeaseData()],
         commission: createDefaultCommissionData(),
         summary: createDefaultSummaryData()
@@ -167,6 +179,8 @@ function createDefaultSummaryData() {
         coBrokerA: 0,
         coBrokerB: 0,
         baseDistribution: 0,
+        broker1Percent: 0,
+        broker2Percent: 0,
         broker1: 0,
         broker2: 0,
         invoice: 0,
@@ -190,7 +204,12 @@ function normalizeFormData() {
             ? formData.lease.map(normalizeLease)
             : defaults.lease,
         commission: normalizeCommission(formData.commission),
-        summary: normalizeSummary(formData.summary)
+        summary: normalizeSummary(formData.summary),
+        sale: {
+        ...defaults.sale,
+        ...(formData.sale || {}),
+        purchasePrice: parseCurrency(formData.sale?.purchasePrice)
+},
     };
 
     syncCommissionRows();
@@ -224,7 +243,9 @@ function normalizeCommission(commission = {}) {
         percentageRows: Array.isArray(commission.percentageRows)
             ? commission.percentageRows.map(row => ({
                 rate: parseNumber(row.rate),
-                amount: parseCurrency(row.amount)
+                amount: parseCurrency(row.amount),
+                coBrokerRate: parseNumber(row.coBrokerRate),
+                coBrokerAmount: parseCurrency(row.coBrokerAmount)
             }))
             : normalizeLegacyCommissionRows(commission.rows),
         perSFRows: Array.isArray(commission.perSFRows)
@@ -252,6 +273,8 @@ function normalizeSummary(summary = {}) {
         coBrokerA: parseCurrency(summary.coBrokerA),
         coBrokerB: parseCurrency(summary.coBrokerB),
         baseDistribution: parseCurrency(summary.baseDistribution),
+        broker1Percent: parseNumber(summary.broker1Percent),
+        broker2Percent: parseNumber(summary.broker2Percent),
         broker1: parseCurrency(summary.broker1),
         broker2: parseCurrency(summary.broker2),
         invoice: parseCurrency(summary.invoice),
@@ -300,8 +323,46 @@ function getElement(id) {
 // Events
 // ======================================
 
+function bindSaleEvents() {
+
+    const purchasePrice = document.getElementById("purchasePrice");
+
+    if (purchasePrice) {
+
+        purchasePrice.addEventListener("focus", () => {
+
+            purchasePrice.value =
+                formData.sale.purchasePrice || "";
+
+        });
+
+        purchasePrice.addEventListener("input", () => {
+
+            formData.sale.purchasePrice =
+                parseCurrency(purchasePrice.value);
+
+            saveForm();
+
+        });
+
+        purchasePrice.addEventListener("blur", () => {
+
+            formData.sale.purchasePrice =
+                parseCurrency(purchasePrice.value);
+
+            renderSale();
+
+            saveForm();
+
+        });
+
+    }
+
+}
+
 function bindEvents() {
     bindDealEvents();
+    bindSaleEvents();
     bindLeaseEvents();
     bindCommissionEvents();
     bindSummaryEvents();
@@ -355,6 +416,14 @@ function bindLeaseEvents() {
         if (index === null || !field) return;
 
         updateLeaseField(index, field, input.value);
+
+        calculateAll();
+
+        renderCommission();
+
+        renderSummary();
+
+        saveForm();
     });
 
     elements.leaseContainer.addEventListener("change", (event) => {
@@ -426,7 +495,17 @@ function bindCommissionEvents() {
 
     elements.commissionContainer.addEventListener("input", (event) => {
         const input = event.target;
-        if (!input.matches(".commissionRate")) return;
+        if (
+
+        !input.matches(".commissionRate") &&
+
+        !input.matches(".coBrokerCommissionRate")
+
+    ) {
+
+        return;
+
+    }
 
         updateCommissionRate(input);
         calculateAll();
@@ -437,11 +516,50 @@ function bindCommissionEvents() {
 }
 
 function bindSummaryEvents() {
-    const coBrokerA = getElement("summaryCoBrokerA");
-    const coBrokerB = getElement("summaryCoBrokerB");
+    const coBrokerA =
+        getElement("summaryCoBrokerA");
 
-    bindSummaryCurrencyInput(coBrokerA, "coBrokerA");
-    bindSummaryCurrencyInput(coBrokerB, "coBrokerB");
+    const coBrokerB =
+        getElement("summaryCoBrokerB");
+
+    const broker1Percent =
+        getElement("summaryBroker1Percent");
+
+    const broker2Percent =
+        getElement("summaryBroker2Percent");
+
+    bindSummaryCurrencyInput(
+        coBrokerA,
+        "coBrokerA"
+    );
+
+    bindSummaryCurrencyInput(
+        coBrokerB,
+        "coBrokerB"
+    );
+
+    bindSummaryPercentInput(
+        broker1Percent,
+        "broker1Percent"
+    );
+
+    bindSummaryPercentInput(
+        broker2Percent,
+        "broker2Percent"
+    );
+}
+
+function bindSummaryPercentInput(input, field) {
+    if (!input) return;
+
+    input.addEventListener("input", () => {
+        formData.summary[field] =
+            parseNumber(input.value);
+
+        calculateSummary();
+        renderSummaryOutputs();
+        saveForm();
+    });
 }
 
 function bindSummaryCurrencyInput(input, field) {
@@ -479,6 +597,9 @@ function updateDealField(field, value) {
 
     syncCommissionRows();
     calculateAll();
+    renderTransactionType();
+    renderKeyDates();
+    renderSale();
     renderCommission();
     renderSummary();
     saveForm();
@@ -550,6 +671,17 @@ function calculateLease(index) {
 
 function calculateAllLeases() {
     formData.lease.forEach((lease, index) => {
+
+        // Period 1 keeps its manually entered Monthly Rent.
+        // Every following period is calculated from the previous period.
+        if (index > 0) {
+            const previousLease = formData.lease[index - 1];
+
+            lease.monthlyRent =
+                previousLease.monthlyRent *
+                (1 + toNumber(previousLease.escalation) / 100);
+        }
+
         calculateLease(index);
     });
 }
@@ -626,11 +758,12 @@ function createLeaseCardHTML(lease, index) {
                 <div class="form-group">
                     <label>Monthly Rent</label>
                     <input
-                        type="text"
-                        class="leaseMonthlyRent"
-                        placeholder="0.00"
-                        inputmode="decimal"
-                        value="${lease.monthlyRent ? formatCurrency(lease.monthlyRent) : ""}">
+                    type="text"
+                    class="leaseMonthlyRent"
+                    placeholder="0.00"
+                    inputmode="decimal"
+                    value="${lease.monthlyRent ? formatCurrency(lease.monthlyRent) : ""}"
+                    ${index > 0 ? "readonly" : ""}>
                 </div>
 
                 <div class="form-group">
@@ -693,9 +826,14 @@ function getLeaseField(input) {
     return "";
 }
 
+
 // ======================================
 // Commission
 // ======================================
+
+function isSaleTransaction() {
+    return formData.deal.dealType === "sale";
+}
 
 function syncCommissionRows() {
     syncPercentageRows();
@@ -703,14 +841,20 @@ function syncCommissionRows() {
 }
 
 function syncPercentageRows() {
-    while (formData.commission.percentageRows.length < formData.lease.length) {
+    const rowCount = isSaleTransaction()
+        ? 1
+        : formData.lease.length;
+
+    while (formData.commission.percentageRows.length < rowCount) {
         formData.commission.percentageRows.push({
             rate: 0,
-            amount: 0
+            amount: 0,
+            coBrokerRate: 0,
+            coBrokerAmount: 0
         });
     }
 
-    formData.commission.percentageRows.length = formData.lease.length;
+    formData.commission.percentageRows.length = rowCount;
 }
 
 function syncPerSFRows() {
@@ -737,7 +881,14 @@ function updateCommissionRate(input) {
     const value = parseCurrency(input.value);
 
     if (method === "percentage" && formData.commission.percentageRows[index]) {
-        formData.commission.percentageRows[index].rate = value;
+
+    const row = formData.commission.percentageRows[index];
+
+    if (input.matches(".coBrokerCommissionRate")) {
+        row.coBrokerRate = value;
+    } else {
+        row.rate = value;
+    }
     }
 
     if (method === "perSF" && formData.commission.perSFRows[index]) {
@@ -754,23 +905,49 @@ function calculateCommission() {
 
     if (formData.commission.method === "percentage") {
         formData.commission.percentageRows.forEach((row, index) => {
-            const lease = formData.lease[index] || createLeaseData();
-            row.amount = lease.netRent * toNumber(row.rate) / 100;
+            let commissionableAmount = 0;
+
+            if (isSaleTransaction()) {
+                // Sale uses Purchase Price as the commissionable amount.
+                commissionableAmount =
+                    toNumber(formData.sale.purchasePrice);
+            } else {
+                // Lease uses the Net Rent for each lease period.
+                const lease =
+                    formData.lease[index] || createLeaseData();
+
+                commissionableAmount =
+                    toNumber(lease.netRent);
+            }
+
+            row.amount =
+                commissionableAmount *
+                toNumber(row.rate) / 100;
+
+            row.coBrokerAmount =
+                row.amount *
+                toNumber(row.coBrokerRate) / 100;
+
             total += row.amount;
         });
     }
 
     if (formData.commission.method === "perSF") {
-        const squareFeet = toNumber(formData.deal.squareFeet);
+        const squareFeet =
+            toNumber(formData.deal.squareFeet);
 
         formData.commission.perSFRows.forEach(row => {
-            row.amount = squareFeet * toNumber(row.rate);
+            row.amount =
+                squareFeet * toNumber(row.rate);
+
             total += row.amount;
         });
     }
 
     if (formData.commission.method === "flatFee") {
-        formData.commission.flatFee.amount = toNumber(formData.commission.flatFee.fee);
+        formData.commission.flatFee.amount =
+            toNumber(formData.commission.flatFee.fee);
+
         total = formData.commission.flatFee.amount;
     }
 
@@ -783,10 +960,22 @@ function renderCommission() {
 
     if (!elements.commissionContainer) return;
 
-    if (formData.commission.method === "percentage") {
-        elements.commissionContainer.innerHTML = formData.lease
-            .map((lease, index) => createPercentageRowHTML(lease, index))
-            .join("");
+    if (formData.commission.method === "percentage") {  
+
+    if (isSaleTransaction()) {
+
+            elements.commissionContainer.innerHTML =
+                createPercentageRowHTML(null, 0);
+
+        } else {
+
+            elements.commissionContainer.innerHTML =
+                formData.lease
+                    .map((lease, index) =>
+                        createPercentageRowHTML(lease, index)
+                    )
+                    .join("");
+        }
     }
 
     if (formData.commission.method === "perSF") {
@@ -822,45 +1011,88 @@ function renderCommissionPanels() {
 }
 
 function createPercentageRowHTML(lease, index) {
-    const row = formData.commission.percentageRows[index] || { rate: 0, amount: 0 };
+    const row =
+        formData.commission.percentageRows[index] || {
+            rate: 0,
+            amount: 0,
+            coBrokerRate: 0,
+            coBrokerAmount: 0
+        };
+
+    const sale = isSaleTransaction();
+
+    const title = sale
+        ? "Sale"
+        : `Lease Period ${index + 1}`;
+
+    const firstLabel = sale
+        ? "Purchase Price"
+        : "From";
+
+    const firstValue = sale
+        ? toNumber(formData.sale.purchasePrice)
+        : formatDateDisplay(lease.startDate);
+
+    const secondLabel = sale
+        ? "Closing Date"
+        : "To";
+
+    const secondValue = sale
+        ? formatDateDisplay(formData.deal.closingDate)
+        : formatDateDisplay(lease.endDate);
+
+    const commissionableLabel = sale
+        ? "Purchase Price"
+        : "Period Net Rent";
+
+    const commissionableAmount = sale
+        ? toNumber(formData.sale.purchasePrice)
+        : toNumber(lease.netRent);
 
     return `
         <div class="commission-row" data-index="${index}">
             <div class="commission-title">
-                Lease Period ${index + 1}
+                ${title}
             </div>
 
             <div class="commission-grid">
+
                 <div class="form-group">
-                    <label>From</label>
+                    <label>${firstLabel}</label>
                     <input
                         type="text"
-                        value="${escapeHTML(lease.startDate)}"
+                        value="${escapeHTML(
+                            sale
+                                ? formatCurrency(firstValue)
+                                : firstValue
+                        )}"
                         readonly>
                 </div>
 
                 <div class="form-group">
-                    <label>To</label>
+                    <label>${secondLabel}</label>
                     <input
                         type="text"
-                        value="${escapeHTML(lease.endDate)}"
+                        value="${escapeHTML(secondValue)}"
                         readonly>
                 </div>
 
-                <div class="form-group">
-                    <label>Period Net Rent</label>
-                    <input
-                        type="text"
-                        value="${formatCurrency(lease.netRent)}"
-                        readonly>
-                </div>
+                ${sale ? "" : `
+                    <div class="form-group">
+                        <label>${commissionableLabel}</label>
+                        <input
+                            type="text"
+                            value="${formatCurrency(commissionableAmount)}"
+                            readonly>
+                    </div>
+                `}
 
                 <div class="form-group">
                     <label>Commissionable Amount</label>
                     <input
                         class="commissionable"
                         type="text"
-                        value="${formatCurrency(lease.netRent)}"
+                        value="${formatCurrency(commissionableAmount)}"
                         readonly>
                 </div>
 
@@ -884,6 +1116,31 @@ function createPercentageRowHTML(lease, index) {
                         value="${formatCurrency(row.amount)}"
                         readonly>
                 </div>
+
+                <div class="form-group">
+                    <label>Co-Broker Commission Rate (%)</label>
+                    <div class="percent-input">
+                        <input
+                            class="coBrokerCommissionRate"
+                            data-index="${index}"
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            placeholder="0"
+                            value="${row.coBrokerRate || ""}">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Co-Broker Commission Amount</label>
+                    <input
+                        class="coBrokerCommissionAmount"
+                        type="text"
+                        value="${formatCurrency(row.coBrokerAmount)}"
+                        readonly>
+                </div>
+
             </div>
         </div>
     `;
@@ -962,8 +1219,20 @@ function renderCommissionOutputs() {
         const amountInput = row.querySelector(".commissionAmount");
         if (!amountInput) return;
 
+        const coBrokerAmountInput =
+        row.querySelector(".coBrokerCommissionAmount");
+
+
         if (formData.commission.method === "percentage") {
-            amountInput.value = formatCurrency(formData.commission.percentageRows[index]?.amount || 0);
+        amountInput.value = formatCurrency(
+        formData.commission.percentageRows[index]?.amount || 0
+            );
+
+            if (coBrokerAmountInput) {
+                coBrokerAmountInput.value = formatCurrency(
+                    formData.commission.percentageRows[index]?.coBrokerAmount || 0
+                );
+            }
         }
 
         if (formData.commission.method === "perSF") {
@@ -991,8 +1260,32 @@ function calculateSummary() {
     formData.summary.clientFee = totalCommission;
     formData.summary.method = COMMISSION_METHOD_LABELS[formData.commission.method] || "";
     formData.summary.baseDistribution = baseDistribution;
-    formData.summary.broker1 = baseDistribution;
-    formData.summary.broker2 = baseDistribution;
+    
+    // ==============================
+
+    // Broker Distribution
+
+    // ==============================
+    const broker1Percent = toNumber(formData.summary.broker1Percent);
+    const broker2Percent = toNumber(formData.summary.broker2Percent);
+
+    const totalPercent = broker1Percent + broker2Percent;
+
+    if (Math.abs(totalPercent - 100) < 0.001) {
+
+        formData.summary.broker1 =
+            baseDistribution * broker1Percent / 100;
+
+        formData.summary.broker2 =
+            baseDistribution * broker2Percent / 100;
+
+    } else {
+
+        formData.summary.broker1 = 0;
+        formData.summary.broker2 = 0;
+
+    }
+
 }
 
 function renderSummary() {
@@ -1008,24 +1301,197 @@ function renderSummary() {
 }
 
 function renderSummaryOutputs() {
-    setFieldValue("summaryBaseDistribution", formatCurrency(formData.summary.baseDistribution));
-    setFieldValue("summaryBroker1", formatCurrency(formData.summary.broker1));
-    setFieldValue("summaryBroker2", formatCurrency(formData.summary.broker2));
+
+    setFieldValue(
+        "summaryBaseDistribution",
+        formatCurrency(formData.summary.baseDistribution)
+    );
+
+    setFieldValue(
+        "summaryBroker1",
+        formatCurrency(formData.summary.broker1)
+    );
+
+    setFieldValue(
+        "summaryBroker2",
+        formatCurrency(formData.summary.broker2)
+    );
+
+
+    const broker1Percent =
+        getElement("summaryBroker1Percent");
+
+    const broker2Percent =
+        getElement("summaryBroker2Percent");
+
+
+    if (broker1Percent) {
+        broker1Percent.value =
+            formData.summary.broker1Percent || "";
+    }
+
+    if (broker2Percent) {
+        broker2Percent.value =
+            formData.summary.broker2Percent || "";
+    }
+
+
+    // Distribution validation
+
+    const status =
+        getElement("distributionPercentStatus");
+
+    const totalPercent =
+        toNumber(formData.summary.broker1Percent) +
+        toNumber(formData.summary.broker2Percent);
+
+
+    if (status) {
+
+        if (Math.abs(totalPercent - 100) < 0.001) {
+
+            status.textContent =
+                "Distribution total: 100%";
+
+        } else {
+
+            status.textContent =
+                `Distribution total: ${totalPercent}% — must equal 100%`;
+
+        }
+
+    }
 }
 
 function renderSummaryLabels() {
-    setTextContent("coBrokerALabel", formData.deal.coBrokerAName || "Co-Broker A");
-    setTextContent("coBrokerBLabel", formData.deal.coBrokerBName || "Co-Broker B");
-    setTextContent("broker1Label", formData.deal.broker1 || "Broker 1");
-    setTextContent("broker2Label", formData.deal.broker2 || "Broker 2");
+
+    const coBrokerALabel = document.getElementById("coBrokerALabel");
+    const coBrokerBLabel = document.getElementById("coBrokerBLabel");
+    const broker1Label = document.getElementById("broker1Label");
+    const broker2Label = document.getElementById("broker2Label");
+
+    if (coBrokerALabel) {
+        coBrokerALabel.textContent =
+            formData.deal.coBrokerAName || "Co-Broker A";
+    }
+
+    if (coBrokerBLabel) {
+        coBrokerBLabel.textContent =
+            formData.deal.coBrokerBName || "Co-Broker B";
+    }
+    
+    if (broker1Label) {
+    broker1Label.textContent =
+    formData.deal.broker1 || "Broker 1";
+    }
+
+    if (broker2Label) {
+    broker2Label.textContent =
+    formData.deal.broker2 || "Broker 2";
+    }
+
 }
+
+
 
 // ======================================
 // Render
 // ======================================
 
+function renderSale() {
+    const closingDate =
+        document.getElementById("saleClosingDate");
+
+    const purchasePrice =
+        document.getElementById("purchasePrice");
+
+    if (closingDate) {
+        closingDate.value =
+            formData.deal.closingDate || "";
+    }
+
+    if (purchasePrice) {
+        purchasePrice.value =
+            formData.sale.purchasePrice
+                ? formatCurrency(formData.sale.purchasePrice)
+                : "";
+    }
+}
+
+function renderTransactionType() {
+    const sale = isSaleTransaction();
+
+        const transactionTitle =
+
+        document.getElementById("transactionTitle");
+
+        const transactionDescription =
+
+            document.getElementById("transactionDescription");
+
+        if (transactionTitle) {
+
+            transactionTitle.textContent =
+
+                sale ? "Sale Details" : "Lease Schedule";
+
+        }
+
+    if (transactionDescription) {
+
+        transactionDescription.textContent =
+
+            sale
+
+                ? "Enter the details for this sale transaction."
+
+                : "Add one or more lease periods for this transaction.";
+
+    }
+
+    const saleDetails =
+        document.getElementById("saleDetails");
+
+    const leaseContainer =
+        document.getElementById("leaseContainer");
+
+    const addLeaseButton =
+        document.getElementById("btnAddLease");
+
+    if (saleDetails) {
+        saleDetails.classList.toggle("hidden", !sale);
+    }
+
+    if (leaseContainer) {
+        leaseContainer.classList.toggle("hidden", sale);
+    }
+
+    if (addLeaseButton) {
+        addLeaseButton.parentElement.classList.toggle(
+            "hidden",
+            sale
+        );
+    }
+}
+
+function renderKeyDates() {
+    const sale = isSaleTransaction();
+
+    document.querySelectorAll(".lease-key-date").forEach(el => {
+        el.classList.toggle("hidden", sale);
+    });
+
+    document.querySelectorAll(".sale-key-date").forEach(el => {
+        el.classList.toggle("hidden", !sale);
+    });
+}
+
+
 function renderAll() {
     renderDeal();
+    renderSale();
+    renderTransactionType();
+    renderKeyDates();
     renderLease();
     renderCommission();
     renderSummary();
@@ -1098,6 +1564,17 @@ function formatCurrency(value) {
     });
 }
 
+function formatDateDisplay(dateString) {
+
+    if (!dateString) return "";
+
+    const [year, month, day] = dateString.split("-");
+
+    if (!year || !month || !day) return dateString;
+
+    return `${month}/${day}/${year}`;
+}
+
 function formatNumber(value) {
     const number = toNumber(value);
     return number ? number.toLocaleString("en-US") : "";
@@ -1117,6 +1594,7 @@ function toNumber(value) {
 // ======================================
 // UI Helpers
 // ======================================
+
 
 function setFieldValue(id, value) {
     const element = getElement(id);
