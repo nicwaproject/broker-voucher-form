@@ -516,27 +516,11 @@ function bindCommissionEvents() {
 }
 
 function bindSummaryEvents() {
-    const coBrokerA =
-        getElement("summaryCoBrokerA");
-
-    const coBrokerB =
-        getElement("summaryCoBrokerB");
-
     const broker1Percent =
         getElement("summaryBroker1Percent");
 
     const broker2Percent =
         getElement("summaryBroker2Percent");
-
-    bindSummaryCurrencyInput(
-        coBrokerA,
-        "coBrokerA"
-    );
-
-    bindSummaryCurrencyInput(
-        coBrokerB,
-        "coBrokerB"
-    );
 
     bindSummaryPercentInput(
         broker1Percent,
@@ -1251,8 +1235,25 @@ function renderCommissionOutputs() {
 
 function calculateSummary() {
     const totalCommission = toNumber(formData.commission.total);
-    const coBrokerA = toNumber(formData.summary.coBrokerA);
-    const coBrokerB = toNumber(formData.summary.coBrokerB);
+    const coBrokerA =
+
+        formData.commission.method === "percentage"
+
+            ? formData.commission.percentageRows.reduce(
+
+                (total, row) =>
+
+                    total + toNumber(row.coBrokerAmount),
+
+                0
+
+            )
+
+            : 0;
+
+    const coBrokerB = 0;
+    formData.summary.coBrokerA = coBrokerA;
+    formData.summary.coBrokerB = coBrokerB;
     const baseDistribution = totalCommission - coBrokerA - coBrokerB;
 
     formData.summary.invoice = totalCommission;

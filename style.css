@@ -586,7 +586,7 @@ section {
 
 }
 
-#summaryCoBrokerA, #summaryCoBrokerB, #summaryBroker1Percent, #summaryBroker2Percent {
+#summaryBroker1Percent, #summaryBroker2Percent {
     color: white;
 }
 
