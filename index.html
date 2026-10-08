@@ -157,13 +157,10 @@
 
                             </label>
 
-                            <input
-
-                                type="date"
-
-                                id="leaseExecutionDate"
-
-                                name="leaseExecutionDate">
+                        <input
+                        type="date"
+                        id="leaseExecutionDate"
+                        name="leaseExecutionDate">
 
                         </div>
 
@@ -177,11 +174,11 @@
 
                             <input
 
-                                type="date"
+                            type="date"
 
-                                id="commencementDate"
+                            id="commencementDate"
 
-                                name="commencementDate">
+                            name="commencementDate">
 
                         </div>
 
@@ -195,11 +192,11 @@
 
                             <input
 
-                                type="date"
+                            type="date"
 
-                                id="leaseExpiryDate"
+                            id="leaseExpiryDate"
 
-                                name="leaseExpiryDate">
+                            name="leaseExpiryDate">
 
                         </div>
 
@@ -210,8 +207,11 @@
                             </label>
 
                             <input
+
                                 type="date"
+
                                 id="purchaseAgreementExecutionDate"
+
                                 name="purchaseAgreementExecutionDate">
 
                         </div>
@@ -223,9 +223,12 @@
                             </label>
 
                             <input
-                                type="date"
-                                id="closingDate"
-                                name="closingDate">
+
+                            type="date"
+
+                            id="closingDate"
+
+                            name="closingDate">
 
                         </div>
 
@@ -264,7 +267,14 @@
 
                             <div class="form-group">
                                 <label>Building Type</label>
-                                <input type="text" id="buildingType">
+                                <select id="buildingType">
+                                    <option value="">Select Building Type</option>
+                                    <option value="Industrial">Industrial</option>
+                                    <option value="Office">Office</option>
+                                    <option value="Retail">Retail</option>
+                                    <option value="Investment Sale">Investment Sale</option>
+                                    <option value="Other">Other</option>
+                                </select>
                             </div>
 
                         </div>
@@ -363,7 +373,12 @@
                             <h3>Co-Broker A</h3>
 
                             <div class="form-group">
-                                <label>Company / Name</label>
+                                <label>Company</label>
+                                <input type="text" id="coBrokerACompany">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Name</label>
                                 <input type="text" id="coBrokerAName">
                             </div>
 
@@ -392,7 +407,12 @@
                             <h3>Co-Broker B</h3>
 
                             <div class="form-group">
-                                <label>Company / Name</label>
+                                <label>Company</label>
+                                <input type="text" id="coBrokerBCompany">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Name</label>
                                 <input type="text" id="coBrokerBName">
                             </div>
 
@@ -522,25 +542,23 @@
                         <div class="form-grid">
 
                             <!-- Start Date -->
-                            <div class="form-group">
+                        <div class="form-group">
+                            <label>Start Date</label>
 
-                                <label>Start Date</label>
-
-                                <input
-                                    type="date"
-                                    class="leaseStartDate">
-
-                            </div>
+                            <input
+                            type="date"
+                            class="leaseStartDate"
+                            value="${escapeHTML(lease.startDate)}">
+                        </div>
 
                             <!-- End Date -->
                             <div class="form-group">
-
                                 <label>End Date</label>
 
                                 <input
                                     type="date"
-                                    class="leaseEndDate">
-
+                                    class="leaseEndDate"
+                                    value="${escapeHTML(lease.endDate)}">
                             </div>
 
                             <!-- Months -->

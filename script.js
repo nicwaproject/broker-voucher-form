@@ -32,9 +32,11 @@ const DEAL_FIELDS = [
     "broker1",
     "broker2",
     "brokerRepresenting",
+    "coBrokerACompany",
     "coBrokerAName",
     "coBrokerAAddress",
     "coBrokerARepresenting",
+    "coBrokerBCompany",
     "coBrokerBName",
     "coBrokerBAddress",
     "coBrokerBRepresenting",
@@ -366,6 +368,7 @@ function bindEvents() {
     bindLeaseEvents();
     bindCommissionEvents();
     bindSummaryEvents();
+    bindDatePickerEvents();
 }
 
 function bindDealEvents() {
@@ -533,6 +536,271 @@ function bindSummaryEvents() {
     );
 }
 
+function bindDatePickerEvents() {
+
+    // ======================================
+    // Calendar Button
+    // ======================================
+
+    document.addEventListener("click", (event) => {
+
+        const button =
+            event.target.closest(".date-picker-button");
+
+        if (!button) return;
+
+        const wrapper =
+            button.closest(".date-input-wrapper");
+
+        if (!wrapper) return;
+
+        const picker =
+            wrapper.querySelector(".native-date-picker");
+
+        const textInput =
+            wrapper.querySelector(".date-input");
+
+        if (!picker || !textInput) return;
+
+
+        // If user already entered a date,
+        // use it as the calendar's current date.
+        const isoDate =
+            parseDisplayDate(textInput.value);
+
+        if (isoDate) {
+            picker.value = isoDate;
+        }
+
+
+        // Open native calendar
+        if (typeof picker.showPicker === "function") {
+            try {
+                picker.showPicker();
+            } catch (error) {
+                picker.click();
+            }
+        } else {
+            picker.click();
+        }
+
+    });
+
+
+    // ======================================
+    // Native Calendar Changed
+    // ======================================
+
+    document.addEventListener("change", (event) => {
+
+        const picker =
+            event.target.closest(".native-date-picker");
+
+        if (!picker) return;
+
+        const wrapper =
+            picker.closest(".date-input-wrapper");
+
+        if (!wrapper) return;
+
+        const textInput =
+            wrapper.querySelector(".date-input");
+
+        if (!textInput) return;
+
+        const isoDate = picker.value;
+
+        if (!isoDate) return;
+
+
+        // Show MM/DD/YYYY
+        textInput.value =
+            formatDateDisplay(isoDate);
+
+
+        // Update correct data field
+        updateDateInputData(
+            textInput,
+            isoDate
+        );
+
+    });
+
+
+    // ======================================
+    // Manual Typing
+    // ======================================
+
+    document.addEventListener("input", (event) => {
+
+        const input = event.target;
+
+        if (!input.matches(".date-input")) return;
+
+
+        // Automatically format:
+        // 02011998 → 02/01/1998
+        const formatted =
+            formatTypedDate(input.value);
+
+        if (formatted !== input.value) {
+            input.value = formatted;
+        }
+
+
+        const isoDate =
+            parseDisplayDate(input.value);
+
+        if (!isoDate) return;
+
+
+        // Sync hidden native picker
+        const wrapper =
+            input.closest(".date-input-wrapper");
+
+        if (wrapper) {
+
+            const picker =
+                wrapper.querySelector(
+                    ".native-date-picker"
+                );
+
+            if (picker) {
+                picker.value = isoDate;
+            }
+
+        }
+
+
+        // Update actual form data
+        updateDateInputData(
+            input,
+            isoDate
+        );
+
+    });
+
+
+    // ======================================
+    // Blur / Validation
+    // ======================================
+
+    document.addEventListener("blur", (event) => {
+
+        const input = event.target;
+
+        if (!input.matches(".date-input")) return;
+
+
+        const value =
+            input.value.trim();
+
+        if (!value) {
+            input.setCustomValidity("");
+            return;
+        }
+
+
+        const isoDate =
+            parseDisplayDate(value);
+
+        if (!isoDate) {
+
+            input.setCustomValidity(
+                "Please enter the date as MM/DD/YYYY."
+            );
+
+            input.reportValidity();
+
+            return;
+        }
+
+
+        input.setCustomValidity("");
+
+        input.value =
+            formatDateDisplay(isoDate);
+
+    }, true);
+
+}
+
+function updateDateInputData(input, isoDate) {
+
+    if (!isoDate) return;
+
+
+    // ======================================
+    // Deal Key Dates
+    // ======================================
+
+    if (input.id &&
+        Object.prototype.hasOwnProperty.call(
+            formData.deal,
+            input.id
+        )
+    ) {
+
+        formData.deal[input.id] =
+            isoDate;
+
+        syncCommissionRows();
+        calculateAll();
+
+        renderTransactionType();
+        renderKeyDates();
+        renderSale();
+        renderCommission();
+        renderSummary();
+
+        saveForm();
+
+        return;
+    }
+
+
+    // ======================================
+    // Lease Dates
+    // ======================================
+
+    if (
+        input.matches(".leaseStartDate") ||
+        input.matches(".leaseEndDate")
+    ) {
+
+        const index =
+            getLeaseIndex(input);
+
+        if (index === null) return;
+
+
+        const field =
+            input.matches(".leaseStartDate")
+                ? "startDate"
+                : "endDate";
+
+
+        formData.lease[index][field] =
+            isoDate;
+
+
+        // Recalculate lease months
+        calculateLease(index);
+
+        // Recalculate all dependent data
+        syncCommissionRows();
+        calculateAll();
+
+        renderLease();
+        renderCommission();
+        renderSummary();
+
+        saveForm();
+
+    }
+
+}
+
 function bindSummaryPercentInput(input, field) {
     if (!input) return;
 
@@ -598,6 +866,18 @@ function renderDeal() {
             input.value = formData.deal.squareFeet
                 ? formatNumber(formData.deal.squareFeet)
                 : "";
+            return;
+        }
+
+        if (
+            field === "leaseExecutionDate" ||
+            field === "commencementDate" ||
+            field === "leaseExpiryDate" ||
+            field === "purchaseAgreementExecutionDate" ||
+            field === "closingDate"
+        ) {
+            input.value =
+                formatDateDisplay(formData.deal[field]);
             return;
         }
 
@@ -1563,6 +1843,92 @@ function formatCurrency(value) {
         currency: "USD",
         minimumFractionDigits: 2
     });
+}
+
+function formatTypedDate(value) {
+    const digits = String(value)
+        .replace(/\D/g, "")
+        .slice(0, 8);
+
+    if (digits.length <= 2) {
+        return digits;
+    }
+
+    if (digits.length <= 4) {
+        return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    }
+
+    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
+function parseDisplayDate(value) {
+    const match = String(value)
+        .trim()
+        .match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+
+    if (!match) return "";
+
+    const month = Number(match[1]);
+    const day = Number(match[2]);
+    const year = Number(match[3]);
+
+    const date = new Date(Date.UTC(year, month - 1, day));
+
+    if (
+        date.getUTCFullYear() !== year ||
+        date.getUTCMonth() !== month - 1 ||
+        date.getUTCDate() !== day
+    ) {
+        return "";
+    }
+
+    return [
+        String(year).padStart(4, "0"),
+        String(month).padStart(2, "0"),
+        String(day).padStart(2, "0")
+    ].join("-");
+}
+
+function getDateTarget(input) {
+    return input.dataset.dateTarget || input.id || "";
+}
+
+function updateDateField(target, isoDate, input) {
+    if (!isoDate) return;
+
+    // Static Deal fields
+    if (Object.prototype.hasOwnProperty.call(formData.deal, target)) {
+        formData.deal[target] = isoDate;
+
+        syncCommissionRows();
+        calculateAll();
+        renderTransactionType();
+        renderKeyDates();
+        renderSale();
+        renderCommission();
+        renderSummary();
+        saveForm();
+
+        return;
+    }
+
+    // Dynamic Lease fields
+    if (
+        input.matches(".leaseStartDate, .leaseEndDate")
+    ) {
+        const index = getLeaseIndex(input);
+
+        if (index === null) return;
+
+        const field = getLeaseField(input);
+
+        updateLeaseField(index, field, isoDate);
+
+        calculateAll();
+        renderCommission();
+        renderSummary();
+        saveForm();
+    }
 }
 
 function formatDateDisplay(dateString) {
