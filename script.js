@@ -368,7 +368,6 @@ function bindEvents() {
     bindLeaseEvents();
     bindCommissionEvents();
     bindSummaryEvents();
-    bindDatePickerEvents();
 }
 
 function bindDealEvents() {
@@ -412,22 +411,18 @@ function bindLeaseEvents() {
     if (!elements.leaseContainer) return;
 
     elements.leaseContainer.addEventListener("input", (event) => {
-        const input = event.target;
-        const index = getLeaseIndex(input);
-        const field = getLeaseField(input);
+    const input = event.target;
+    const index = getLeaseIndex(input);
+    const field = getLeaseField(input);
 
-        if (index === null || !field) return;
+    if (index === null || !field) return;
 
-        updateLeaseField(index, field, input.value);
+    updateLeaseField(index, field, input.value);
 
-        calculateAll();
-
-        renderCommission();
-
-        renderSummary();
-
-        saveForm();
-    });
+    // Do not recalculate or re-render while typing.
+    // Native date inputs use segmented keyboard input in Chrome.
+    saveForm();
+});
 
     elements.leaseContainer.addEventListener("change", (event) => {
         const input = event.target;
@@ -862,6 +857,7 @@ function renderDeal() {
         const input = elements[field];
         if (!input) return;
 
+        // Square Feet
         if (field === "squareFeet") {
             input.value = formData.deal.squareFeet
                 ? formatNumber(formData.deal.squareFeet)
@@ -869,6 +865,8 @@ function renderDeal() {
             return;
         }
 
+        // Native date inputs must receive ISO format:
+        // YYYY-MM-DD
         if (
             field === "leaseExecutionDate" ||
             field === "commencementDate" ||
@@ -876,8 +874,7 @@ function renderDeal() {
             field === "purchaseAgreementExecutionDate" ||
             field === "closingDate"
         ) {
-            input.value =
-                formatDateDisplay(formData.deal[field]);
+            input.value = formData.deal[field] || "";
             return;
         }
 
